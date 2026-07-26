@@ -457,6 +457,12 @@
             <input type="number" id="new-card-cap" placeholder="e.g. 1000" step="1">
           </div>
 
+          <div class="field" id="prior-spend-field" style="display:none;">
+            <label class="label">Bonus spend already made this month (S$, on your real card, before adding it here)</label>
+            <input type="number" id="new-card-prior-spend" placeholder="e.g. 400" step="1">
+            <div class="note-box" style="margin-top:8px;margin-bottom:0;">Check your card's app or statement for how much you've already spent this calendar month in the bonus category. This counts toward the cap so the app doesn't overstate your remaining bonus miles. Leave blank if you're starting fresh this month.</div>
+          </div>
+
           <div class="field">
             <label class="label">Current balance (KrisFlyer miles)</label>
             <input type="number" id="new-card-balance" placeholder="e.g. 15000" step="1">
@@ -864,6 +870,16 @@ function bonusRateFor(card, category){
 
 // Returns the mpd rate that actually applies to this specific expense entry,
 // accounting for the card's monthly cap and calendar-month reset.
+// Returns any real-world spend the user manually declared for a card, but only
+// if it was tagged for the exact calendar month being checked (so it doesn't
+// silently roll over and wrongly suppress a later month's cap).
+function priorSpendFor(card, month){
+  if(card.priorSpendMonth === month && card.priorSpendAmount){
+    return card.priorSpendAmount;
+  }
+  return 0;
+}
+
 function effectiveRateFor(entry, allExpenses){
   const card = cards[entry.cardId];
   if(!card) return DEFAULT_RATE;
@@ -874,7 +890,8 @@ function effectiveRateFor(entry, allExpenses){
   }
 
   // Sum bonus-eligible spend on this card, same calendar month, that comes
-  // "before" this entry in date order (date asc, then createdAt asc as tiebreak).
+  // "before" this entry in date order (date asc, then createdAt asc as tiebreak),
+  // starting from any manually-declared prior spend for that same month.
   const month = monthKeyOf(entry.date);
   const sameMonthBonusEntries = Object.values(allExpenses).filter(e =>
     e.cardId === entry.cardId &&
@@ -885,7 +902,7 @@ function effectiveRateFor(entry, allExpenses){
     return (a.createdAt||0) - (b.createdAt||0);
   });
 
-  let spendBefore = 0;
+  let spendBefore = priorSpendFor(card, month);
   for(const e of sameMonthBonusEntries){
     const isSameEntry = e.createdAt === entry.createdAt && e.date === entry.date && e.amount === entry.amount && e.category === entry.category;
     if(isSameEntry) break;
@@ -917,9 +934,10 @@ function currentMonthBonusSpend(cid){
   const card = cards[cid];
   if(!card || !card.cap) return 0;
   const nowMonth = new Date().toISOString().slice(0,7);
-  return Object.values(expenses)
+  const logged = Object.values(expenses)
     .filter(e => e.cardId === cid && monthKeyOf(e.date) === nowMonth && isBonusCategory(card, e.category))
     .reduce((sum, e) => sum + e.amount, 0);
+  return priorSpendFor(card, nowMonth) + logged;
 }
 
 function renderDashboard(){
@@ -1045,17 +1063,24 @@ function renderManageCards(){
     container.innerHTML = `<div class="empty-state" style="padding:24px 10px;">No cards yet. Tap "+ Add a card" below.</div>`;
     return;
   }
+  const nowMonth = new Date().toISOString().slice(0,7);
   container.innerHTML = ids.map(cid => {
     const c = cards[cid];
-    return `<div class="card-manage-row" id="mgr-${cid}">
-      <div>
-        <div class="name">${escapeHtml(c.name)}</div>
-        <div class="meta">${c.bank} · ${c.type === 'points' ? 'Points → Miles' : 'Direct Miles'} · <span class="balance-badge">${(c.balance||0).toLocaleString()}</span> mi</div>
-        ${c.chosenCategoryCard ? `<div class="meta">★ Bonus category: ${c.chosenCategory || 'not set'}</div>` : ''}
+    const declaredThisMonth = priorSpendFor(c, nowMonth);
+    return `<div class="card-manage-row" id="mgr-${cid}" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <div>
+          <div class="name">${escapeHtml(c.name)}</div>
+          <div class="meta">${c.bank} · ${c.type === 'points' ? 'Points → Miles' : 'Direct Miles'} · <span class="balance-badge">${(c.balance||0).toLocaleString()}</span> mi</div>
+          ${c.chosenCategoryCard ? `<div class="meta">★ Bonus category: ${c.chosenCategory || 'not set'}</div>` : ''}
+          ${c.cap ? `<div class="meta">This month's declared prior spend: S$${declaredThisMonth.toFixed(0)}</div>` : ''}
+        </div>
+        <div id="mgr-actions-${cid}">
+          ${c.cap ? `<button class="btn-sm" data-action="edit-spend" data-id="${cid}" style="margin-right:6px;">Set spend</button>` : ''}
+          <button class="btn-sm danger" data-action="remove" data-id="${cid}">Remove</button>
+        </div>
       </div>
-      <div id="mgr-actions-${cid}">
-        <button class="btn-sm danger" data-action="remove" data-id="${cid}">Remove</button>
-      </div>
+      <div id="mgr-spend-edit-${cid}"></div>
     </div>`;
   }).join('');
 
@@ -1064,6 +1089,8 @@ function renderManageCards(){
     if(!btn) return;
     const action = btn.dataset.action;
     const cid = btn.dataset.id;
+    const card = cards[cid];
+
     if(action === 'remove'){
       document.getElementById('mgr-actions-' + cid).innerHTML = `
         <span style="font-size:11.5px;color:var(--slate);margin-right:6px;">Sure?</span>
@@ -1076,6 +1103,23 @@ function renderManageCards(){
       toast('Card removed');
     } else if(action === 'cancel'){
       renderManageCards();
+    } else if(action === 'edit-spend'){
+      const currentVal = priorSpendFor(card, nowMonth);
+      document.getElementById('mgr-spend-edit-' + cid).innerHTML = `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+          <div class="label" style="margin-bottom:6px;">Bonus spend already made this month (S$)</div>
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="spend-input-${cid}" value="${currentVal || ''}" placeholder="e.g. 400" style="flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--navy);color:var(--cream);font-size:13px;">
+            <button class="btn-sm" data-action="save-spend" data-id="${cid}">Save</button>
+          </div>
+        </div>`;
+    } else if(action === 'save-spend'){
+      const val = parseFloat(document.getElementById('spend-input-' + cid).value) || 0;
+      cardsRef.child(cid).update({
+        priorSpendAmount: val,
+        priorSpendMonth: val > 0 ? nowMonth : null
+      });
+      toast('Updated this month\'s spend');
     }
   };
 }
@@ -1094,6 +1138,12 @@ showAddCardBtn.onclick = () => {
   if(!visible) resetAddCardForm();
 };
 
+function updatePriorSpendVisibility(){
+  const capVal = parseFloat(document.getElementById('new-card-cap').value);
+  document.getElementById('prior-spend-field').style.display = (capVal && capVal > 0) ? 'block' : 'none';
+}
+document.getElementById('new-card-cap').addEventListener('input', updatePriorSpendVisibility);
+
 function resetAddCardForm(){
   document.getElementById('card-picker').value = '';
   document.getElementById('card-info-banner').style.display = 'none';
@@ -1102,7 +1152,9 @@ function resetAddCardForm(){
   document.getElementById('new-card-name').value = '';
   document.getElementById('new-card-bank').value = 'DBS';
   document.getElementById('new-card-cap').value = '';
+  document.getElementById('new-card-prior-spend').value = '';
   document.getElementById('new-card-balance').value = '';
+  updatePriorSpendVisibility();
   renderRateInputs({ general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 });
 }
 
@@ -1136,6 +1188,7 @@ document.getElementById('card-picker').onchange = function(){
   document.getElementById('new-card-name').value = tpl.name;
   document.getElementById('new-card-bank').value = tpl.bank;
   document.getElementById('new-card-cap').value = tpl.cap || '';
+  updatePriorSpendVisibility();
 
   if(tpl.chosenCategoryCard){
     const sel = document.getElementById('new-card-chosen-category');
@@ -1159,6 +1212,8 @@ document.getElementById('save-card-btn').onclick = () => {
   const bank = document.getElementById('new-card-bank').value;
   const balance = parseInt(document.getElementById('new-card-balance').value) || 0;
   const cap = parseFloat(document.getElementById('new-card-cap').value) || null;
+  const priorSpendAmount = cap ? (parseFloat(document.getElementById('new-card-prior-spend').value) || 0) : 0;
+  const priorSpendMonth = (cap && priorSpendAmount > 0) ? new Date().toISOString().slice(0,7) : null;
   if(!name){ toast('Enter a card name'); return; }
 
   const pickerVal = document.getElementById('card-picker').value;
@@ -1198,7 +1253,7 @@ document.getElementById('save-card-btn').onclick = () => {
     };
   }
 
-  cardsRef.push({ name, bank, type, rates, cap, exclusions, notes, balance, chosenCategoryCard, chosenCategory });
+  cardsRef.push({ name, bank, type, rates, cap, exclusions, notes, balance, chosenCategoryCard, chosenCategory, priorSpendAmount, priorSpendMonth });
 
   addCardForm.style.display = 'none';
   showAddCardBtn.textContent = '+ Add a card';
