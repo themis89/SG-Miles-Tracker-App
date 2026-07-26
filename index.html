@@ -774,19 +774,30 @@ function updateExpPreview(){
   const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
   const cid = cardSelect.value;
   const cat = catSelect.value;
+  const date = document.getElementById('exp-date').value;
   const card = cards[cid];
-  if(!card || !amount || !cat){ banner.style.display = 'none'; return; }
+  if(!card || !amount || !cat || !date){ banner.style.display = 'none'; return; }
 
-  const rate = rateFor(cid, cat);
+  // Build a hypothetical entry to run through the real cap-aware calculator,
+  // using a createdAt far in the future so it sorts after any existing same-day
+  // transactions (i.e. previews as "if I save this now").
+  const hypotheticalEntry = { cardId: cid, category: cat, date, amount, createdAt: Number.MAX_SAFE_INTEGER };
+  const rate = effectiveRateFor(hypotheticalEntry, expenses);
   const miles = Math.floor(amount * rate);
-  let noteHtml = '';
+  const bonusRate = bonusRateFor(card, cat);
+  const hitCap = isBonusCategory(card, cat) && card.cap && rate < bonusRate;
 
-  if(card.chosenCategoryCard){
+  let noteHtml = '';
+  if(hitCap){
+    noteHtml = `at ${rate} mpd — monthly cap of S$${card.cap.toLocaleString()} already reached for this category this month, so this earns the base rate instead of ${bonusRate} mpd`;
+  } else if(card.chosenCategoryCard){
     const key = CAT_TO_KEY[cat];
     const matches = (key === 'dining' && card.chosenCategory === 'Dining') || (key === 'transport' && card.chosenCategory === 'Transport');
     noteHtml = matches
       ? `at ${rate} mpd — this is your bonus category (cap S$${card.cap}/mo)`
       : `at ${rate} mpd — not your bonus category (${card.chosenCategory || 'none set'})`;
+  } else if(card.cap && isBonusCategory(card, cat)){
+    noteHtml = `at ${rate} mpd (bonus, cap S$${card.cap.toLocaleString()}/mo)`;
   } else {
     noteHtml = `at ${rate} mpd`;
   }
@@ -795,6 +806,8 @@ function updateExpPreview(){
   document.getElementById('exp-preview-text').textContent = noteHtml;
   banner.style.display = 'block';
 }
+
+document.getElementById('exp-date').addEventListener('change', updateExpPreview);
 
 document.getElementById('save-expense').onclick = () => {
   const date = document.getElementById('exp-date').value;
@@ -814,18 +827,101 @@ document.getElementById('save-expense').onclick = () => {
   document.querySelector('[data-target="dashboard"]').click();
 };
 
-/* ---------------- RATE HELPERS ---------------- */
-function rateFor(cardId, category){
-  const card = cards[cardId];
-  if(!card) return DEFAULT_RATE;
+/* ---------------- RATE / CAP HELPERS ----------------
+   Monthly bonus caps reset every calendar month, based on the
+   transaction's own date (not when it was logged). Once cumulative
+   bonus-eligible spend on a card for that calendar month reaches the
+   cap, any transaction that would push the total over the cap falls
+   back to that card's General ("base") rate instead of the bonus rate.
+   Transactions are applied in date order (ties broken by createdAt)
+   so the cap resets cleanly at the start of each month. */
+
+function monthKeyOf(dateStr){
+  // dateStr = 'YYYY-MM-DD' -> 'YYYY-MM'
+  return dateStr ? dateStr.slice(0,7) : '';
+}
+
+function isBonusCategory(card, category){
+  const key = CAT_TO_KEY[category] || 'general';
+  if(key === 'general') return false;
+  if(card.chosenCategoryCard){
+    return (key === 'dining' && card.chosenCategory === 'Dining') || (key === 'transport' && card.chosenCategory === 'Transport');
+  }
+  const genRate = (card.rates && card.rates.general != null) ? card.rates.general : DEFAULT_RATE;
+  const catRate = (card.rates && card.rates[key] != null) ? card.rates[key] : DEFAULT_RATE;
+  return catRate > genRate;
+}
+
+function baseRateOf(card){
+  if(card.chosenCategoryCard) return card.baseRate != null ? card.baseRate : DEFAULT_RATE;
+  return (card.rates && card.rates.general != null) ? card.rates.general : DEFAULT_RATE;
+}
+
+function bonusRateFor(card, category){
   const key = CAT_TO_KEY[category] || 'general';
   return (card.rates && card.rates[key] != null) ? card.rates[key] : DEFAULT_RATE;
 }
+
+// Returns the mpd rate that actually applies to this specific expense entry,
+// accounting for the card's monthly cap and calendar-month reset.
+function effectiveRateFor(entry, allExpenses){
+  const card = cards[entry.cardId];
+  if(!card) return DEFAULT_RATE;
+
+  if(!isBonusCategory(card, entry.category) || !card.cap){
+    // Not a bonus category on this card, or card has no cap — flat rate applies
+    return bonusRateFor(card, entry.category);
+  }
+
+  // Sum bonus-eligible spend on this card, same calendar month, that comes
+  // "before" this entry in date order (date asc, then createdAt asc as tiebreak).
+  const month = monthKeyOf(entry.date);
+  const sameMonthBonusEntries = Object.values(allExpenses).filter(e =>
+    e.cardId === entry.cardId &&
+    monthKeyOf(e.date) === month &&
+    isBonusCategory(card, e.category)
+  ).sort((a,b) => {
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.createdAt||0) - (b.createdAt||0);
+  });
+
+  let spendBefore = 0;
+  for(const e of sameMonthBonusEntries){
+    const isSameEntry = e.createdAt === entry.createdAt && e.date === entry.date && e.amount === entry.amount && e.category === entry.category;
+    if(isSameEntry) break;
+    spendBefore += e.amount;
+  }
+
+  const wouldTotal = spendBefore + entry.amount;
+  if(wouldTotal > card.cap){
+    // This transaction pushes the card over its monthly cap -> base rate
+    return baseRateOf(card);
+  }
+  return bonusRateFor(card, entry.category);
+}
+
+function rateFor(cardId, category){
+  // Used for previews / "best card" comparisons where no specific date/history
+  // context exists yet — shows the bonus rate at face value (cap not yet consumed).
+  const card = cards[cardId];
+  if(!card) return DEFAULT_RATE;
+  return bonusRateFor(card, category);
+}
+
 function milesFor(entry){
-  return entry.amount * rateFor(entry.cardId, entry.category);
+  return entry.amount * effectiveRateFor(entry, expenses);
 }
 
 /* ---------------- DASHBOARD ---------------- */
+function currentMonthBonusSpend(cid){
+  const card = cards[cid];
+  if(!card || !card.cap) return 0;
+  const nowMonth = new Date().toISOString().slice(0,7);
+  return Object.values(expenses)
+    .filter(e => e.cardId === cid && monthKeyOf(e.date) === nowMonth && isBonusCategory(card, e.category))
+    .reduce((sum, e) => sum + e.amount, 0);
+}
+
 function renderDashboard(){
   const list = Object.values(expenses);
   let totalMiles = 0, totalSpend = 0;
@@ -851,14 +947,17 @@ function renderDashboard(){
     const c = cards[cid];
     const d = perCard[cid] || {miles:0,spend:0};
     const shownBalance = (c.balance || 0) + d.miles;
+    const usedThisMonth = c.cap ? currentMonthBonusSpend(cid) : 0;
+    const capReached = c.cap && usedThisMonth >= c.cap;
     grid.innerHTML += `<div class="mini-card" onclick="toggleCardDetail('${cid}')">
       <div class="label">${c.name}</div>
       <div class="val mono">${Math.round(shownBalance).toLocaleString()} mi</div>
       <div class="spend">$${d.spend.toFixed(2)} logged spend</div>
       ${c.chosenCategoryCard ? `<div class="cat-tag">★ 4 mpd on ${c.chosenCategory || '—'}, 0.4 mpd elsewhere</div>` : ''}
+      ${c.cap ? `<div class="cat-tag" style="color:${capReached ? 'var(--bad)' : 'var(--slate)'};">${capReached ? '⚠ Cap reached this month' : 'S$' + usedThisMonth.toFixed(0) + ' / ' + c.cap.toLocaleString() + ' bonus cap this month'}</div>` : ''}
       ${(c.exclusions || c.cap) ? `
       <div class="detail" id="dash-detail-${cid}">
-        ${c.cap ? `<div><strong>Bonus cap:</strong> S$${c.cap.toLocaleString()}/mo</div>` : ''}
+        ${c.cap ? `<div><strong>Bonus cap:</strong> S$${c.cap.toLocaleString()}/mo — resets each calendar month</div>` : ''}
         ${c.exclusions ? `<div class="warn" style="margin-top:5px;">Excluded:</div><div>${c.exclusions}</div>` : ''}
         ${c.notes ? `<div style="margin-top:5px;">${c.notes}</div>` : ''}
       </div>` : ''}
@@ -906,7 +1005,11 @@ function renderHistory(){
   container.innerHTML = keys.map(k => {
     const e = expenses[k];
     const m = milesFor(e);
-    const cardName = cards[e.cardId] ? cards[e.cardId].name : '(deleted card)';
+    const card = cards[e.cardId];
+    const cardName = card ? card.name : '(deleted card)';
+    const actualRate = card ? effectiveRateFor(e, expenses) : DEFAULT_RATE;
+    const faceRate = card ? bonusRateFor(card, e.category) : DEFAULT_RATE;
+    const wasCapped = card && isBonusCategory(card, e.category) && card.cap && actualRate < faceRate;
     return `<div class="stub">
       <div class="main">
         <div class="top-row">
@@ -915,6 +1018,7 @@ function renderHistory(){
         </div>
         <div class="cat">${e.category}</div>
         ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
+        ${wasCapped ? `<div class="note" style="color:var(--bad);">Monthly cap reached — base rate applied</div>` : ''}
       </div>
       <div class="miles-col">
         <div class="amt mono">$${e.amount.toFixed(2)}</div>
@@ -1116,6 +1220,5 @@ renderRateInputs({ general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 });
 
 </script>
 </body>
-</html>
 </html>
 
