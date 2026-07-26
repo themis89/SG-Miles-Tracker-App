@@ -2,1309 +2,630 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Miles Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --navy:#0B1D33;
+    --navy-2:#122A47;
+    --panel:#142A47;
+    --cream:#F5F1E8;
+    --gold:#C9A15A;
+    --gold-soft:rgba(201,161,90,0.35);
+    --slate:#7E8FA6;
+    --good:#7FAE93;
+    --bad:#D4664A;
+    --line:rgba(245,241,232,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--navy);}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--cream);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .label{
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    font-size:11px;
+    color:var(--slate);
+    font-weight:600;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:'Inter',sans-serif;}
 
-  :root {
-    --bg: #F7F8FA;
-    --surface: #FFFFFF;
-    --border: #E5E7EB;
-    --text: #111318;
-    --muted: #6B7280;
-    --accent: #C9A84C;
-    --accent-light: #FDF6E3;
-    --danger: #DC2626;
-    --success: #16A34A;
-    --tab-active: #111318;
-  }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 430px;
-    margin: 0 auto;
-    padding-bottom: 100px;
-    font-size: 14px;
-  }
-
-  /* HEADER */
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 20px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .app-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .month-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-family: inherit;
-  }
-  .month-selector span { font-weight: 500; color: var(--text); }
-
-  /* TOTAL MILES TICKER */
-  .total-ticker {
-    background: var(--surface);
-    padding: 0 20px 20px;
-  }
-  .ticker-label {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-  .ticker-value {
-    font-size: 42px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-  }
-  .ticker-sub {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  .ticker-sub strong { color: var(--text); font-weight: 500; }
-
-  /* TABS */
-  .tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .tab {
-    flex: 1;
-    padding: 12px 0;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
-    text-align: center;
-    cursor: pointer;
-    border: none;
-    background: none;
-    font-family: inherit;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-  }
-  .tab.active {
-    color: var(--tab-active);
-    border-bottom-color: var(--tab-active);
+  /* ---------- CONFIG BANNER ---------- */
+  #config-banner{
+    display:none;
+    background:var(--bad);
+    color:#fff;
+    padding:10px 16px;
+    font-size:13px;
+    text-align:center;
+    line-height:1.4;
   }
 
-  /* SECTIONS */
-  .section { padding: 16px 20px; }
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
+  /* ---------- AUTH SCREEN ---------- */
+  #auth-screen{
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:32px 24px;
+  }
+  .brand{text-align:center;margin-bottom:36px;}
+  .brand .plane{font-size:28px;display:block;margin-bottom:10px;transform:rotate(45deg);}
+  .brand h1{font-size:26px;letter-spacing:.02em;}
+  .brand p{color:var(--slate);font-size:13px;margin-top:6px;}
+
+  .auth-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+  }
+  .auth-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--navy);border-radius:10px;padding:4px;}
+  .auth-tabs button{
+    flex:1;padding:9px;border:none;border-radius:8px;background:transparent;color:var(--slate);
+    font-weight:600;font-size:13px;transition:all .15s;
+  }
+  .auth-tabs button.active{background:var(--gold);color:var(--navy);}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;margin-bottom:6px;}
+  .field input,.field select{
+    width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);
+    background:var(--navy);color:var(--cream);font-size:14px;
+  }
+  .field input:focus,.field select:focus{outline:2px solid var(--gold-soft);border-color:var(--gold);}
+
+  .btn-primary{
+    width:100%;padding:13px;border:none;border-radius:10px;background:var(--gold);
+    color:var(--navy);font-weight:700;font-size:14px;letter-spacing:.02em;margin-top:6px;
+  }
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-ghost{
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:transparent;
+    color:var(--cream);font-size:13px;margin-top:10px;
+  }
+  .auth-error{
+    color:var(--bad);font-size:13px;margin-top:12px;display:none;
+    padding:10px;background:rgba(212,102,74,0.1);border-radius:8px;border:1px solid rgba(212,102,74,0.3);
   }
 
-  /* CARD LIST */
-  .card-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: border-color 0.15s;
+  /* ---------- APP SCREEN ---------- */
+  #app-screen{display:none;flex:1;flex-direction:column;}
+  header{
+    padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--line);
   }
-  .card-item:active { border-color: var(--accent); }
-  .card-item-left { display: flex; flex-direction: column; gap: 3px; }
-  .card-name { font-size: 14px; font-weight: 600; }
-  .card-bank { font-size: 12px; color: var(--muted); }
-  .card-item-right { text-align: right; }
-  .card-miles {
-    font-size: 18px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--accent);
-  }
-  .card-miles-label { font-size: 11px; color: var(--muted); }
-  .card-points { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  header .title{display:flex;align-items:center;gap:8px;}
+  header .title span.plane{transform:rotate(45deg);font-size:18px;}
+  header h1{font-size:18px;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;margin-right:5px;}
+  .sync-row{font-size:11px;color:var(--slate);display:flex;align-items:center;}
+  .logout-link{background:none;border:none;color:var(--slate);font-size:12px;text-decoration:underline;padding:0;margin-left:12px;}
 
-  .bank-badge {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+  nav.tabs{
+    display:flex;border-bottom:1px solid var(--line);
   }
-  .badge-dbs  { background: #FEF3C7; color: #92400E; }
-  .badge-uob  { background: #EDE9FE; color: #5B21B6; }
-  .badge-ocbc { background: #D1FAE5; color: #065F46; }
-  .badge-hsbc { background: #DBEAFE; color: #1E40AF; }
+  nav.tabs button{
+    flex:1;background:none;border:none;color:var(--slate);font-size:12.5px;font-weight:600;
+    padding:12px 4px;letter-spacing:.03em;border-bottom:2px solid transparent;
+  }
+  nav.tabs button.active{color:var(--gold);border-bottom-color:var(--gold);}
 
-  /* BEST CARD BANNER */
-  .best-card-banner {
-    background: var(--accent-light);
-    border: 1px solid #F0DFA0;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 16px;
-  }
-  .best-card-banner .label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 6px;
-  }
-  .best-card-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-  .best-card-row:last-child { margin-bottom: 0; }
-  .best-cat { font-size: 13px; font-weight: 500; }
-  .best-card-name { font-size: 13px; color: var(--muted); }
-  .best-rate { font-size: 13px; font-weight: 600; }
+  main{flex:1;padding:20px;padding-bottom:48px;}
+  section{display:none;}
+  section.active{display:block;}
 
-  /* TRANSACTION LOG */
-  .txn-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    cursor: pointer;
-    transition: border-color 0.15s;
+  /* ---- Dashboard ---- */
+  .total-card{
+    background:linear-gradient(160deg,var(--panel),var(--navy-2));
+    border:1px solid var(--gold-soft);
+    border-radius:16px;padding:22px;text-align:center;margin-bottom:18px;
   }
-  .txn-item:active { border-color: var(--border); opacity: 0.8; }
-  .txn-left { flex: 1; }
-  .txn-merchant { font-size: 14px; font-weight: 500; }
-  .txn-meta { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .txn-cat {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 1px 5px;
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--muted);
-  }
-  .txn-right { text-align: right; min-width: 70px; }
-  .txn-miles { font-size: 15px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .txn-spend { font-size: 12px; color: var(--muted); }
+  .total-card .label{color:var(--gold);}
+  .total-card .big{font-size:38px;font-weight:600;margin:8px 0 2px;letter-spacing:.02em;}
+  .total-card .sub{font-size:12px;color:var(--slate);}
 
-  .date-divider {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 16px 0 8px;
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+  .mini-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;
   }
-  .date-divider:first-child { margin-top: 0; }
+  .mini-card .label{margin-bottom:6px;}
+  .mini-card .val{font-size:19px;font-weight:600;}
+  .mini-card .spend{font-size:11px;color:var(--slate);margin-top:4px;}
 
-  /* BOTTOM NAV */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 430px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex;
-    padding: 8px 0 20px;
-    z-index: 200;
-  }
-  .nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 0;
-    font-family: inherit;
-  }
-  .nav-icon { font-size: 20px; line-height: 1; }
-  .nav-label { font-size: 10px; font-weight: 500; color: var(--muted); }
-  .nav-btn.active .nav-label { color: var(--tab-active); }
-  .nav-btn.active .nav-icon { filter: saturate(1); opacity: 1; }
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px;}
+  .section-title h2{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--slate);}
 
-  /* ADD TRANSACTION MODAL */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 300;
-    align-items: flex-end;
-    justify-content: center;
+  .best-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:11px 14px;margin-bottom:8px;
   }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface);
-    border-radius: 18px 18px 0 0;
-    padding: 24px 20px 40px;
-    width: 100%;
-    max-width: 430px;
-    max-height: 90vh;
-    overflow-y: auto;
+  .best-row .cat{font-size:13px;font-weight:500;}
+  .best-badge{
+    background:rgba(201,161,90,0.15);color:var(--gold);border:1px solid var(--gold-soft);
+    border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;
   }
-  .modal-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 20px;
-  }
-  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
 
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; text-transform: uppercase; }
-  .field input, .field select {
-    width: 100%;
-    padding: 11px 13px;
-    font-size: 15px;
-    font-family: 'Inter', sans-serif;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg);
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
+  /* ---- Add expense ---- */
+  .btn-secondary{
+    padding:11px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);
+    color:var(--cream);font-size:13px;
   }
-  .field input:focus, .field select:focus { border-color: var(--accent); }
 
-  .field-row { display: flex; gap: 10px; }
-  .field-row .field { flex: 1; }
-
-  .miles-preview {
-    background: var(--accent-light);
-    border: 1px solid #F0DFA0;
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  /* ---- History: boarding stub ---- */
+  .stub{
+    position:relative;display:grid;grid-template-columns:1fr 96px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    margin-bottom:14px;overflow:hidden;
   }
-  .miles-preview-label { font-size: 12px; color: var(--muted); font-weight: 500; }
-  .miles-preview-value { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .miles-preview-pts { font-size: 11px; color: var(--muted); }
-
-  .btn-primary {
-    width: 100%;
-    background: var(--text);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    transition: opacity 0.15s;
+  .stub::before,.stub::after{
+    content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+    background:var(--navy);right:88px;z-index:2;
   }
-  .btn-primary:active { opacity: 0.85; }
-
-  /* MANAGE CARDS MODAL */
-  .manage-card-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
+  .stub::before{top:-8px;}
+  .stub::after{bottom:-8px;}
+  .stub .main{padding:14px;border-right:2px dashed var(--line);}
+  .stub .main .top-row{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .stub .card-chip{
+    font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--gold);
+    background:rgba(201,161,90,0.12);padding:3px 8px;border-radius:6px;
   }
-  .manage-card-item:last-of-type { border-bottom: none; }
-  .manage-card-actions { display: flex; gap: 8px; }
-  .btn-sm {
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
+  .stub .date{font-size:11px;color:var(--slate);}
+  .stub .cat{font-size:14px;font-weight:500;margin-bottom:2px;}
+  .stub .note{font-size:11.5px;color:var(--slate);}
+  .stub .miles-col{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;
   }
-  .btn-danger-sm { border-color: #FECACA; background: #FEF2F2; color: var(--danger); }
-
-  /* ADD CARD FORM */
-  .add-card-form {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-top: 16px;
+  .stub .miles-col .amt{font-size:11px;color:var(--slate);margin-bottom:4px;}
+  .stub .miles-col .mi{font-size:16px;font-weight:600;color:var(--good);}
+  .stub .del{
+    position:absolute;top:6px;right:6px;background:none;border:none;color:var(--slate);
+    font-size:14px;padding:4px 6px;line-height:1;
   }
-  .add-card-form .field { margin-bottom: 10px; }
-  .add-card-form .field:last-child { margin-bottom: 0; }
-  .earn-rates-section { margin-top: 10px; }
-  .earn-rates-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .earn-rate-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .earn-rate-row label { font-size: 12px; flex: 1; color: var(--text); }
-  .earn-rate-row input { width: 70px; flex: none; padding: 8px 10px; font-size: 13px; }
+  .stub .del:hover{color:var(--bad);}
 
-  /* MONTHLY SUMMARY */
-  .summary-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
+  .empty-state{
+    text-align:center;padding:40px 20px;color:var(--slate);font-size:13.5px;line-height:1.6;
   }
-  .summary-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-  .summary-bank { font-weight: 600; font-size: 14px; }
-  .summary-total { font-size: 16px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .summary-row { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px solid var(--bg); }
-  .summary-cat { font-size: 12px; color: var(--muted); }
-  .summary-cat-val { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .empty-state .plane{font-size:30px;display:block;margin-bottom:10px;transform:rotate(45deg);opacity:.5;}
 
-  /* PAGE VIEWS */
-  .page { display: none; }
-  .page.active { display: block; }
-
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
+  /* ---- Settings ---- */
+  .rate-table{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;}
+  .rate-row{display:grid;grid-template-columns:1fr 72px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);}
+  .rate-row:last-child{border-bottom:none;}
+  .rate-row.head{background:var(--panel);}
+  .rate-row.head span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);}
+  .rate-row input{
+    width:100%;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--navy);
+    color:var(--cream);font-size:13px;text-align:center;
   }
-  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
-  .empty-state p { font-size: 14px; line-height: 1.5; }
-
-  .month-total-row {
-    display: flex;
-    justify-content: space-between;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
+  .card-block{margin-bottom:16px;}
+  .card-block h3{font-size:13px;color:var(--gold);margin-bottom:8px;}
+  .note-box{
+    font-size:12px;color:var(--slate);background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px;margin-bottom:18px;line-height:1.5;
   }
-  .month-total-label { font-size: 13px; color: var(--muted); font-weight: 500; }
-  .month-total-val { font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--gold);color:var(--navy);padding:10px 18px;border-radius:20px;
+    font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;
+  }
+  .toast.show{opacity:1;}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <div id="config-banner">⚠ Firebase config not set. Open the file and replace <code>firebaseConfig</code> with your own project's values (see Firebase Console → Project settings → Your apps).</div>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-top">
-    <div class="app-title">Miles Tracker</div>
-    <button class="month-selector" onclick="cycleMonth()">
-      <span id="currentMonthLabel">Jun 2026</span> ▾
-    </button>
-  </div>
-  <div class="total-ticker">
-    <div class="ticker-label">Total KrisFlyer Miles</div>
-    <div class="ticker-value" id="totalMilesDisplay">0</div>
-    <div class="ticker-sub" id="totalMilesSub">across <strong id="totalCards">0</strong> cards</div>
-  </div>
-  <div class="tabs">
-    <button class="tab active" onclick="showPage('cards')">Cards</button>
-    <button class="tab" onclick="showPage('log')">Log</button>
-    <button class="tab" onclick="showPage('summary')">Summary</button>
-    <button class="tab" onclick="showPage('best')">Best Card</button>
-  </div>
-</div>
-
-<!-- PAGE: CARDS -->
-<div class="page active" id="page-cards">
-  <div class="section">
-    <div class="section-label">Your Cards</div>
-    <div id="cardsList"></div>
-    <button class="btn-primary" style="margin-top:8px" onclick="openManageCards()">+ Add / Manage Cards</button>
-  </div>
-</div>
-
-<!-- PAGE: LOG -->
-<div class="page" id="page-log">
-  <div class="section">
-    <div id="txnList"></div>
-  </div>
-</div>
-
-<!-- PAGE: SUMMARY -->
-<div class="page" id="page-summary">
-  <div class="section">
-    <div class="month-total-row">
-      <div class="month-total-label">Miles earned this month</div>
-      <div class="month-total-val" id="summaryMonthTotal">0</div>
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div class="brand">
+      <span class="plane">✈</span>
+      <h1>Miles Tracker</h1>
+      <p>Log spend, earn KrisFlyer miles, everywhere you sign in.</p>
     </div>
-    <div class="section-label">By Card</div>
-    <div id="summaryList"></div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button id="tab-login" class="active">Log in</button>
+        <button id="tab-signup">Sign up</button>
+      </div>
+      <div class="field">
+        <label class="label">Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="label">Password</label>
+        <input type="password" id="auth-password" placeholder="At least 6 characters" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" id="auth-submit">Log in</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
   </div>
-</div>
 
-<!-- PAGE: BEST CARD -->
-<div class="page" id="page-best">
-  <div class="section">
-    <div class="section-label">Best earn rate by category</div>
-    <div class="best-card-banner" id="bestCardBanner"></div>
-    <div class="section-label" style="margin-top:16px">All rates comparison</div>
-    <div id="ratesTable"></div>
-  </div>
-</div>
+  <!-- APP SCREEN -->
+  <div id="app-screen">
+    <header>
+      <div class="title">
+        <span class="plane">✈</span>
+        <h1>Miles Tracker</h1>
+      </div>
+      <div class="sync-row">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-text">Synced</span>
+        <button class="logout-link" id="logout-btn">Log out</button>
+      </div>
+    </header>
 
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <button class="nav-btn" onclick="openAddTxn()">
-    <div class="nav-icon">＋</div>
-    <div class="nav-label">Add</div>
-  </button>
-  <button class="nav-btn" onclick="showPage('cards')">
-    <div class="nav-icon">💳</div>
-    <div class="nav-label">Cards</div>
-  </button>
-  <button class="nav-btn" onclick="showPage('log')">
-    <div class="nav-icon">📋</div>
-    <div class="nav-label">Log</div>
-  </button>
-  <button class="nav-btn" onclick="showPage('summary')">
-    <div class="nav-icon">📊</div>
-    <div class="nav-label">Summary</div>
-  </button>
-</div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-target="dashboard">Dashboard</button>
+      <button class="tab-btn" data-target="add">Add</button>
+      <button class="tab-btn" data-target="history">History</button>
+      <button class="tab-btn" data-target="settings">Rates</button>
+    </nav>
 
-<!-- ADD TRANSACTION MODAL -->
-<div class="modal-overlay" id="addTxnModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Add Transaction</div>
-    <div class="field">
-      <label>Merchant</label>
-      <input type="text" id="txnMerchant" placeholder="e.g. Grab, Shopee, Din Tai Fung">
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Amount (SGD)</label>
-        <input type="number" id="txnAmount" placeholder="0.00" step="0.01" oninput="calcMilesPreview()">
-      </div>
-      <div class="field">
-        <label>Date</label>
-        <input type="date" id="txnDate">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Card</label>
-        <select id="txnCard" onchange="calcMilesPreview()">
-          <option value="">Select card</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Category</label>
-        <select id="txnCat" onchange="calcMilesPreview()">
-          <option value="general">General</option>
-          <option value="dining">Dining</option>
-          <option value="online">Online Shopping</option>
-          <option value="transport">Transport</option>
-        </select>
-      </div>
-    </div>
-    <div class="miles-preview" id="milesPreview">
-      <div>
-        <div class="miles-preview-label">Miles earned</div>
-        <div class="miles-preview-pts" id="previewPtsNote"></div>
-      </div>
-      <div class="miles-preview-value" id="previewMilesVal">—</div>
-    </div>
-    <button class="btn-primary" onclick="saveTransaction()">Save Transaction</button>
-  </div>
-</div>
+    <main>
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="active">
+        <div class="total-card">
+          <div class="label">Total KrisFlyer miles</div>
+          <div class="big mono" id="total-miles">0</div>
+          <div class="sub" id="total-spend-sub">from $0 tracked spend</div>
+        </div>
 
-<!-- MANAGE CARDS MODAL -->
-<div class="modal-overlay" id="manageCardsModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Manage Cards</div>
-    <div id="manageCardsList"></div>
-    <div id="addCardForm" class="add-card-form" style="display:none">
-      <div class="field">
-        <label>Card Name</label>
-        <input type="text" id="newCardName" placeholder="e.g. DBS Altitude Visa">
-      </div>
+        <div class="section-title"><h2>By card</h2></div>
+        <div class="card-grid" id="card-grid"></div>
 
-      <div class="field">
-        <label>Quick-fill from Singapore card database</label>
-        <select id="cardPicker" onchange="applyCardTemplate()">
-          <option value="">— Select your card (auto-fills rates & exclusions) —</option>
-          <optgroup label="DBS">
-            <option value="dbs-altitude-visa">DBS Altitude Visa Signature</option>
-            <option value="dbs-woman-world">DBS Woman's World Card</option>
-          </optgroup>
-          <optgroup label="UOB">
-            <option value="uob-prvi-miles-visa">UOB PRVI Miles Visa</option>
-            <option value="uob-preferred-visa">UOB Preferred Visa</option>
-            <option value="uob-ladys-card">UOB Lady's Card</option>
-          </optgroup>
-          <optgroup label="OCBC">
-            <option value="ocbc-90n-mastercard">OCBC 90°N Mastercard</option>
-            <option value="ocbc-90n-visa">OCBC 90°N Visa</option>
-          </optgroup>
-          <optgroup label="HSBC">
-            <option value="hsbc-travelone">HSBC TravelOne</option>
-            <option value="hsbc-revolution">HSBC Revolution</option>
-          </optgroup>
-          <optgroup label="Citibank">
-            <option value="citi-premiermiles">Citi PremierMiles</option>
-            <option value="citi-rewards">Citi Rewards</option>
-          </optgroup>
-          <optgroup label="Maybank">
-            <option value="maybank-horizon-visa">Maybank Horizon Visa Signature</option>
-          </optgroup>
-          <optgroup label="American Express">
-            <option value="amex-krisflyer-ascend">AMEX KrisFlyer Ascend</option>
-            <option value="amex-krisflyer-base">AMEX KrisFlyer Credit Card</option>
-          </optgroup>
-          <optgroup label="Standard Chartered">
-            <option value="sc-journey">Standard Chartered Journey</option>
-          </optgroup>
-          <option value="__manual__">Other / enter manually</option>
-        </select>
-      </div>
+        <div class="section-title"><h2>Best card by category</h2></div>
+        <div id="best-list"></div>
+      </section>
 
-      <div id="cardInfoBanner" style="display:none; background: var(--accent-light); border: 1px solid #F0DFA0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.5;">
-        <div style="font-weight:600; color: var(--accent); margin-bottom:4px;">⚠️ Exclusions — no miles earned on:</div>
-        <div id="cardExclusionsText" style="color: var(--text);"></div>
-        <div id="cardNotesText" style="color: var(--muted); margin-top:6px;"></div>
-      </div>
-
-      <div class="field" id="chosenCategoryField" style="display:none">
-        <label>Your chosen 4 mpd bonus category (this quarter)</label>
-        <select id="newCardChosenCategory">
-          <option value="">— Select your enrolled category —</option>
-        </select>
-        <div style="font-size:11px; color:var(--muted); margin-top:5px;">Only spend in this category earns 4 mpd (up to the cap). Everything else on this card earns 0.4 mpd. This app maps its own Dining/Online/Transport categories to your choice where they match — if you pick something like Fashion or Family, log those purchases under "General" instead.</div>
-      </div>
-
-      <div class="field-row">
+      <!-- ADD EXPENSE -->
+      <section id="add">
         <div class="field">
-          <label>Bank</label>
-          <select id="newCardBank">
-            <option value="DBS">DBS</option>
-            <option value="UOB">UOB</option>
-            <option value="OCBC">OCBC</option>
-            <option value="HSBC">HSBC</option>
-            <option value="Citibank">Citibank</option>
-            <option value="Maybank">Maybank</option>
-            <option value="Amex">Amex</option>
-            <option value="Standard Chartered">Standard Chartered</option>
-          </select>
+          <label class="label">Date</label>
+          <input type="date" id="exp-date">
         </div>
         <div class="field">
-          <label>Earns</label>
-          <select id="newCardType">
-            <option value="miles">Direct Miles</option>
-            <option value="points">Points → Miles</option>
-          </select>
+          <label class="label">Amount (SGD)</label>
+          <input type="number" id="exp-amount" placeholder="0.00" step="0.01" min="0">
         </div>
-      </div>
-      <div class="field" id="conversionField" style="display:none">
-        <label>Points per $1 spent</label>
-        <input type="number" id="newCardPPD" placeholder="e.g. 4 (UNI$4)" step="0.1">
-      </div>
-      <div class="field" id="conversionRateField" style="display:none">
-        <label>Points → Miles ratio (e.g. 2 pts = 1 mile → enter 2)</label>
-        <input type="number" id="newCardConvRate" placeholder="e.g. 2" step="0.1">
-      </div>
-      <div class="earn-rates-section" id="earnRatesSection">
-        <div class="earn-rates-title">Earn Rate (Miles per $1)</div>
-        <div class="earn-rate-row"><label>General</label><input type="number" id="rateGeneral" placeholder="1.2" step="0.01" class="field input"></div>
-        <div class="earn-rate-row"><label>Dining</label><input type="number" id="rateDining" placeholder="2.0" step="0.01"></div>
-        <div class="earn-rate-row"><label>Online Shopping</label><input type="number" id="rateOnline" placeholder="2.0" step="0.01"></div>
-        <div class="earn-rate-row"><label>Transport</label><input type="number" id="rateTransport" placeholder="1.2" step="0.01"></div>
-      </div>
-      <div class="field" id="capField" style="margin-top:10px">
-        <label>Bonus rate monthly cap (S$ spend, blank = no cap)</label>
-        <input type="number" id="newCardCap" placeholder="e.g. 1000" step="1">
-      </div>
-      <div class="field" style="margin-top:12px">
-        <label>Current Balance (Miles)</label>
-        <input type="number" id="newCardBalance" placeholder="e.g. 15000" step="1">
+        <div class="field">
+          <label class="label">Category</label>
+          <select id="exp-category"></select>
+        </div>
+        <div class="field">
+          <label class="label">Card used</label>
+          <select id="exp-card"></select>
+        </div>
+        <div class="field">
+          <label class="label">Note (optional)</label>
+          <input type="text" id="exp-note" placeholder="e.g. Don Don Donki, Fukuoka">
+        </div>
+        <button class="btn-primary" id="save-expense">Save expense</button>
+      </section>
 
-      </div>
-      <button class="btn-primary" style="margin-top:14px" onclick="saveCard()">Add Card</button>
-    </div>
-    <button class="btn-primary" id="showAddCardBtn" style="margin-top:12px; background: var(--bg); color: var(--text); border: 1px solid var(--border);" onclick="toggleAddCardForm()">+ Add New Card</button>
-    <button class="btn-primary" style="margin-top:10px" onclick="closeModal('manageCardsModal')">Done</button>
+      <!-- HISTORY -->
+      <section id="history">
+        <div id="history-list"></div>
+      </section>
+
+      <!-- SETTINGS / RATES -->
+      <section id="settings">
+        <div class="note-box">
+          Set each card's real miles-per-dollar rate by category so totals and recommendations reflect your actual cards. Rates start at a placeholder of 1.2 mpd — check your card's terms for the true figure, since promo rates change often.
+        </div>
+        <div id="rates-container"></div>
+        <button class="btn-primary" id="save-rates">Save rates</button>
+      </section>
+    </main>
   </div>
-
 </div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-app-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-database-compat.js"></script>
 
 <script>
-// ── STATE ──
-let state = {
-  cards: [],
-  transactions: [],
-  currentMonth: new Date().getMonth(),
-  currentYear: new Date().getFullYear()
+/* ============================================================
+   FIREBASE CONFIG — REPLACE THESE VALUES WITH YOUR OWN PROJECT
+   Firebase Console → Project settings → Your apps → SDK setup
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDtuS41wv1wMKm2MRY_IQaisr_9lcMR2B0",
+  authDomain: "sg-miles-tracker.firebaseapp.com",
+  databaseURL: "https://sg-miles-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sg-miles-tracker",
+  storageBucket: "sg-miles-tracker.firebasestorage.app",
+  messagingSenderId: "130760965273",
+  appId: "1:130760965273:web:45c2c3155fb8d8bad8cc08",
+  measurementId: "G-2NBSXLMTS3"
 };
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const CAT_LABELS = { general: 'General', dining: 'Dining', online: 'Online Shopping', transport: 'Transport' };
+if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+  document.getElementById('config-banner').style.display = 'block';
+}
 
-// ── SINGAPORE CREDIT CARD DATABASE ──
-// Rates verified against issuer sites & aggregators as of Jul 2026. Banks revise
-// promos/caps often — treat as a strong starting point, edit if your card's terms differ.
-// rates = miles per S$1 (mpd) per category. cap = S$ spend/month at which bonus rate stops (null = uncapped).
-// exclusions = short human-readable notes on what does NOT earn miles on this card.
-const CARD_DATABASE = [
-  {
-    id: 'dbs-altitude-visa', name: 'DBS Altitude Visa Signature', bank: 'DBS', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 },
-    cap: null,
-    exclusions: 'No miles on: cryptocurrency, utilities, insurance premiums, government payments (incl. income tax via non-DBS channels), EZ-Link/transit top-ups, cash advances, fees & charges.',
-    notes: 'Overseas spend earns 2.2 mpd (not modelled separately per-category above — treat foreign-currency transactions as bonused). DBS Points never expire.'
-  },
-  {
-    id: 'dbs-woman-world', name: "DBS Woman's World Card", bank: 'DBS', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 0.4, dining: 4.0, online: 4.0, transport: 0.4 },
-    cap: 1500,
-    exclusions: 'Online/dining bonus (4 mpd) capped at S$1,500 spend/month combined. No miles on: utilities, insurance, education, government payments, cash advances, EZ-Link/transit top-ups.',
-    notes: 'Excellent for online shopping + dining; general spend rate is weak outside the bonus categories.'
-  },
-  {
-    id: 'uob-prvi-miles-visa', name: 'UOB PRVI Miles Visa', bank: 'UOB', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.4, dining: 1.4, online: 1.4, transport: 1.4 },
-    cap: null,
-    exclusions: 'UNI$ calculated in blocks of S$5 per transaction — amounts not reaching a full $5 block earn nothing. No miles on: utilities, insurance, education, government/tax payments, EZ-Link/transit top-ups, cash advances.',
-    notes: 'Overseas: 2.4 mpd (3 mpd in Malaysia/Indonesia/Thailand/Vietnam). Agoda/Expedia bookings: up to 8 mpd via UOB PRVI portal. UNI$ expire 2 years after earning (by quarter). No monthly cap on general spend.'
-  },
-  {
-    id: 'uob-preferred-visa', name: 'UOB Preferred Visa', bank: 'UOB', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 0.4, dining: 0.4, online: 4.0, transport: 4.0 },
-    cap: 600,
-    exclusions: 'Mobile contactless & selected online spend (4 mpd) capped at S$600/month per category (separate caps). No miles on: utilities, insurance, education, government payments, EZ-Link/transit top-ups.',
-    notes: 'Best for mobile contactless transport (Grab, transit) and defined online MCCs. Base rate outside bonus categories is low.'
-  },
-  {
-    id: 'ocbc-90n-mastercard', name: 'OCBC 90°N Mastercard', bank: 'OCBC', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.3, dining: 1.3, online: 1.3, transport: 1.3 },
-    cap: null,
-    exclusions: 'Rewards calculated in S$5 blocks per transaction. No miles on: insurance, education, utilities are actually INCLUDED per OCBC (unlike most banks) — check current T&Cs, government/tax payments, EZ-Link/transit top-ups, cash advances.',
-    notes: 'Overseas: 2.1 mpd. Agoda bookings via Travel with OCBC: up to 7 mpd. No cap, no expiry on 90°N Miles. S$25 conversion fee to KrisFlyer applies.'
-  },
-  {
-    id: 'ocbc-90n-visa', name: 'OCBC 90°N Visa', bank: 'OCBC', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.3, dining: 1.3, online: 1.3, transport: 1.3 },
-    cap: null,
-    exclusions: 'Rewards calculated in S$5 blocks per transaction. No miles on: insurance, education, government/tax payments, EZ-Link/transit top-ups, cash advances.',
-    notes: 'Overseas: 2.1 mpd. Same earn structure as 90°N Mastercard. No cap, no expiry on 90°N Miles.'
-  },
-  {
-    id: 'hsbc-travelone', name: 'HSBC TravelOne', bank: 'HSBC', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 },
-    cap: null,
-    exclusions: 'No miles on: government/tax payments, insurance, utilities, education, EZ-Link/transit top-ups, cash advances, fees. No bonus miles on any specific spend category — only local vs. overseas distinction.',
-    notes: 'Overseas (foreign currency): 2.4 mpd. Reward points expire 37 months after the month earned. Instant transfer to 20 airline/hotel partners, no conversion fee.'
-  },
-  {
-    id: 'hsbc-revolution', name: 'HSBC Revolution', bank: 'HSBC', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 0.4, dining: 4.0, online: 4.0, transport: 0.4 },
-    cap: 1000,
-    exclusions: 'Online & dining bonus (4 mpd) capped at S$1,000 spend/month combined. No miles on: utilities, insurance, education, government payments, EZ-Link/transit top-ups.',
-    notes: 'No annual fee. Good complement card for online/dining; weak on general and overseas spend.'
-  },
-  {
-    id: 'citi-premiermiles', name: 'Citi PremierMiles', bank: 'Citibank', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 },
-    cap: null,
-    exclusions: 'No miles on: insurance, education, government/tax payments (unless via Citi PayAll, which earns separately), utilities, EZ-Link/transit top-ups, cash advances.',
-    notes: 'Overseas: 2.2 mpd. Agoda/Expedia/Kaligo via Citi portal: up to 10 mpd, uncapped. Citi Miles never expire. 3.25% FX fee applies.'
-  },
-  {
-    id: 'citi-rewards', name: 'Citi Rewards', bank: 'Citibank', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 0.4, dining: 0.4, online: 4.0, transport: 0.4 },
-    cap: 1000,
-    exclusions: 'Online shopping bonus (4 mpd) capped at S$1,000 spend/month. No miles on: utilities, insurance, education, government payments, EZ-Link/transit top-ups.',
-    notes: 'Strong pure online-shopping card; general/transport spend earns very little.'
-  },
-  {
-    id: 'maybank-horizon-visa', name: 'Maybank Horizon Visa Signature', bank: 'Maybank', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 0.4, dining: 1.2, online: 1.2, transport: 1.2 },
-    cap: null,
-    exclusions: 'Utilities excluded entirely (from Dec 2025). Insurance/medical/education/rentals/professional-services earn only 0.16 mpd, capped at S$3,000/month — these do NOT count toward the S$800 min. spend needed to unlock bonus rates. Specific merchants excluded: Instarem, RazerPay, SimplyGo top-ups, SingTel Dash, SGeBiz.',
-    notes: 'Overseas (FCY): uncapped 2.8 mpd (needs S$800 min. spend/month across the card to unlock). Air tickets: 2.8 mpd, capped S$10,000/month. Dining/petrol/taxi/Grab/Agoda: 1.2 mpd. TREATS Points expire after 12 months; pooled across Maybank cards.'
-  },
-  {
-    id: 'amex-krisflyer-ascend', name: 'AMEX KrisFlyer Ascend', bank: 'Amex', type: 'miles',
-    rates: { general: 1.2, dining: 1.2, online: 1.2, transport: 1.2 },
-    cap: null,
-    exclusions: 'Full exclusion list at go.amex/sgexclusions — generally excludes: government/tax payments, utilities, insurance premiums, EZ-Link/transit top-ups, cash advances, school fees (varies).',
-    notes: 'SIA/Scoot direct bookings & Grab SG: 2 mpd, capped at S$200/month combined. Overseas: flat 1.2 mpd (no FCY bonus since Nov 2024). Direct KrisFlyer miles — no conversion needed. Higher-tier perks (Hilton status, lounge access) vs. base KrisFlyer card.'
-  },
-  {
-    id: 'amex-krisflyer-base', name: 'AMEX KrisFlyer Credit Card', bank: 'Amex', type: 'miles',
-    rates: { general: 1.1, dining: 1.1, online: 1.1, transport: 1.1 },
-    cap: null,
-    exclusions: 'Full exclusion list at go.amex/sgexclusions — generally excludes: government/tax payments, utilities, insurance premiums, EZ-Link/transit top-ups, cash advances.',
-    notes: 'SIA/Scoot direct bookings & Grab SG: 2 mpd, capped at S$200/month combined. Flat 1.1 mpd on everything else, local or overseas. Direct KrisFlyer miles.'
-  },
-  {
-    id: 'sc-journey', name: 'Standard Chartered Journey', bank: 'Standard Chartered', type: 'points',
-    ppd: null, convRate: null,
-    rates: { general: 1.2, dining: 1.2, online: 3.0, transport: 3.0 },
-    cap: 1000,
-    exclusions: 'Online transport/grocery/food-delivery bonus (3 mpd) and online grocery (2 mpd) capped at S$1,000 spend/month each, with a combined 3,000-mile cap per statement month. No miles on: government payments, utilities, hospital/medical payments, EZ-Link/Transit Link/wallet top-ups (GrabPay, YouTrip, PayPal top-ups), education.',
-    notes: 'Overseas (in-person): 2 mpd. Reward Points convert to KrisFlyer or Asia Miles only (25,000 pts = 10,000 miles), S$27.25 transfer fee.'
-  },
-  {
-    id: 'uob-ladys-card', name: "UOB Lady's Card", bank: 'UOB', type: 'points',
-    ppd: null, convRate: null,
-    chosenCategoryCard: true, // special mechanic: pick ONE bonus category at 4 mpd, everything else 0.4 mpd
-    chosenCategoryOptions: ['Dining', 'Travel', 'Fashion', 'Beauty & Wellness', 'Family', 'Transport', 'Entertainment'],
-    baseRate: 0.4,
-    bonusRate: 4.0,
-    rates: { general: 0.4, dining: 0.4, online: 0.4, transport: 0.4 }, // overridden dynamically based on chosenCategory
-    cap: 1000,
-    exclusions: 'Bonus rate (4 mpd) applies only to your ONE chosen category, up to S$1,000 spend/month — everything else on the card, including unspent categories, earns just 0.4 mpd. No miles at all on: prepaid wallet top-ups (GrabPay, YouTrip, etc.), utilities, insurance, education, government/tax payments, EZ-Link/transit top-ups, cash advances.',
-    notes: "Choose 1 bonus category per quarter from: Dining, Travel, Fashion, Beauty & Wellness, Family, Transport, or Entertainment — changeable via UOB TMRW app, effective next quarter. Of the 4 mpd, 0.4 mpd posts immediately and the remaining 3.6 mpd lands in a lump sum at the start of the following month. Pairing with a UOB Lady's Savings Account can boost the bonus rate up to 6-10 mpd depending on account balance tier. 3.25% FX fee + 1% international processing fee on overseas spend."
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+
+const CARDS = ['DBS','UOB','OCBC','HSBC'];
+const CATEGORIES = ['Dining','Groceries','Online Shopping','Travel','Petrol','Others'];
+const DEFAULT_RATE = 1.2;
+
+let currentUser = null;
+let expenses = {};
+let rates = {};
+let expensesRef = null;
+let ratesRef = null;
+let isSignup = false;
+
+/* ---------------- AUTH UI ---------------- */
+const tabLogin = document.getElementById('tab-login');
+const tabSignup = document.getElementById('tab-signup');
+const authSubmit = document.getElementById('auth-submit');
+const authError = document.getElementById('auth-error');
+
+tabLogin.onclick = () => { isSignup=false; tabLogin.classList.add('active'); tabSignup.classList.remove('active'); authSubmit.textContent='Log in'; hideError(); };
+tabSignup.onclick = () => { isSignup=true; tabSignup.classList.add('active'); tabLogin.classList.remove('active'); authSubmit.textContent='Sign up'; hideError(); };
+
+function hideError(){ authError.style.display='none'; }
+function showError(msg){ authError.textContent = msg; authError.style.display='block'; }
+
+function friendlyAuthError(code){
+  const map = {
+    'auth/email-already-in-use':'That email is already registered — try logging in instead.',
+    'auth/invalid-email':'That email address doesn\'t look right.',
+    'auth/weak-password':'Password should be at least 6 characters.',
+    'auth/wrong-password':'Incorrect password.',
+    'auth/user-not-found':'No account found with that email.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/network-request-failed':'Network error — check your connection.'
+  };
+  return map[code] || 'Something went wrong. Please try again.';
+}
+
+authSubmit.onclick = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if(!email || !password){ showError('Enter both email and password.'); return; }
+  authSubmit.disabled = true;
+  hideError();
+  try{
+    if(isSignup){
+      await auth.createUserWithEmailAndPassword(email, password);
+    } else {
+      await auth.signInWithEmailAndPassword(email, password);
+    }
+  } catch(e){
+    showError(friendlyAuthError(e.code));
+  } finally {
+    authSubmit.disabled = false;
   }
-];
+};
 
-function getCardTemplate(id) {
-  return CARD_DATABASE.find(c => c.id === id);
-}
+document.getElementById('logout-btn').onclick = () => auth.signOut();
 
-// ── PERSISTENCE ──
-function save() {
-  try { localStorage.setItem('milesTracker', JSON.stringify(state)); } catch(e) {}
-}
-function load() {
-  try {
-    const d = localStorage.getItem('milesTracker');
-    if (d) state = { ...state, ...JSON.parse(d) };
-  } catch(e) {}
-}
+/* ---------------- AUTH STATE ---------------- */
+auth.onAuthStateChanged(user => {
+  if(user){
+    currentUser = user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app-screen').style.display='flex';
+    attachListeners(user.uid);
+  } else {
+    currentUser = null;
+    if(expensesRef) expensesRef.off();
+    if(ratesRef) ratesRef.off();
+    document.getElementById('app-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
 
-// ── SEED DATA ──
-function seedData() {
-  if (state.cards.length > 0) return;
-  const dbsAlt = getCardTemplate('dbs-altitude-visa');
-  const uobPrvi = getCardTemplate('uob-prvi-miles-visa');
-  const ocbc90n = getCardTemplate('ocbc-90n-mastercard');
-  const hsbcT1 = getCardTemplate('hsbc-travelone');
+/* ---------------- DATA LISTENERS ---------------- */
+function attachListeners(uid){
+  setSync(false);
+  expensesRef = db.ref('users/'+uid+'/expenses');
+  ratesRef = db.ref('users/'+uid+'/rates');
 
-  state.cards = [
-    { id: 'c1', name: dbsAlt.name, bank: dbsAlt.bank, type: dbsAlt.type, rates: {...dbsAlt.rates}, cap: dbsAlt.cap, exclusions: dbsAlt.exclusions, notes: dbsAlt.notes, balance: 18500 },
-    { id: 'c2', name: uobPrvi.name, bank: uobPrvi.bank, type: uobPrvi.type, rates: {...uobPrvi.rates}, cap: uobPrvi.cap, exclusions: uobPrvi.exclusions, notes: uobPrvi.notes, balance: 9200 },
-    { id: 'c3', name: ocbc90n.name, bank: ocbc90n.bank, type: ocbc90n.type, rates: {...ocbc90n.rates}, cap: ocbc90n.cap, exclusions: ocbc90n.exclusions, notes: ocbc90n.notes, balance: 6700 },
-    { id: 'c4', name: hsbcT1.name, bank: hsbcT1.bank, type: hsbcT1.type, rates: {...hsbcT1.rates}, cap: hsbcT1.cap, exclusions: hsbcT1.exclusions, notes: hsbcT1.notes, balance: 12100 }
-  ];
-  const today = new Date();
-  const y = today.getFullYear(), m = today.getMonth();
-  state.transactions = [
-    { id: 't1', merchant: 'Grab', amount: 22.50, cat: 'transport', cardId: 'c1', date: `${y}-${String(m+1).padStart(2,'0')}-05`, miles: 27 },
-    { id: 't2', merchant: 'Shopee', amount: 89.90, cat: 'online', cardId: 'c3', date: `${y}-${String(m+1).padStart(2,'0')}-08`, miles: 116 },
-    { id: 't3', merchant: 'Din Tai Fung', amount: 68.00, cat: 'dining', cardId: 'c4', date: `${y}-${String(m+1).padStart(2,'0')}-12`, miles: 81 },
-    { id: 't4', merchant: 'NTUC FairPrice', amount: 112.30, cat: 'general', cardId: 'c2', date: `${y}-${String(m+1).padStart(2,'0')}-15`, miles: 157 },
-    { id: 't5', merchant: 'Grab', amount: 18.00, cat: 'transport', cardId: 'c1', date: `${y}-${String(m+1).padStart(2,'0')}-18`, miles: 21 },
-    { id: 't6', merchant: 'Lazada', amount: 45.00, cat: 'online', cardId: 'c4', date: `${y}-${String(m+1).padStart(2,'0')}-21`, miles: 54 },
-    { id: 't7', merchant: 'Paradise Dynasty', amount: 95.00, cat: 'dining', cardId: 'c3', date: `${y}-${String(m+1).padStart(2,'0')}-24`, miles: 124 }
-  ];
-}
+  ratesRef.once('value').then(snap => {
+    if(!snap.exists()){
+      const seed = {};
+      CARDS.forEach(c => { seed[c] = {}; CATEGORIES.forEach(cat => seed[c][cat] = DEFAULT_RATE); });
+      ratesRef.set(seed);
+    }
+  });
 
-// ── MONTH NAV ──
-function cycleMonth() {
-  state.currentMonth--;
-  if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
-  document.getElementById('currentMonthLabel').textContent = `${MONTHS[state.currentMonth]} ${state.currentYear}`;
-  render();
-}
-
-function getFilteredTxns() {
-  return state.transactions.filter(t => {
-    const d = new Date(t.date + 'T00:00:00');
-    return d.getMonth() === state.currentMonth && d.getFullYear() === state.currentYear;
+  expensesRef.on('value', snap => {
+    expenses = snap.val() || {};
+    renderDashboard(); renderHistory();
+    setSync(true);
+  });
+  ratesRef.on('value', snap => {
+    rates = snap.val() || {};
+    renderDashboard(); renderSettings();
+    setSync(true);
   });
 }
 
-// ── RENDER ──
-function render() {
-  renderCards();
-  renderLog();
-  renderSummary();
-  renderBestCard();
-  updateTicker();
+function setSync(synced){
+  document.getElementById('sync-dot').style.background = synced ? 'var(--good)' : 'var(--gold)';
+  document.getElementById('sync-text').textContent = synced ? 'Synced' : 'Syncing…';
 }
 
-function updateTicker() {
-  const total = state.cards.reduce((s, c) => s + (c.balance || 0), 0);
-  document.getElementById('totalMilesDisplay').textContent = total.toLocaleString();
-  document.getElementById('totalCards').textContent = state.cards.length;
+/* ---------------- TABS ---------------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+  };
+});
+
+/* ---------------- ADD EXPENSE ---------------- */
+const catSelect = document.getElementById('exp-category');
+const cardSelect = document.getElementById('exp-card');
+CATEGORIES.forEach(c => catSelect.appendChild(new Option(c,c)));
+CARDS.forEach(c => cardSelect.appendChild(new Option(c,c)));
+document.getElementById('exp-date').valueAsDate = new Date();
+
+document.getElementById('save-expense').onclick = () => {
+  const date = document.getElementById('exp-date').value;
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const category = catSelect.value;
+  const card = cardSelect.value;
+  const note = document.getElementById('exp-note').value.trim();
+
+  if(!date || !amount || amount<=0){ toast('Enter a valid date and amount'); return; }
+
+  expensesRef.push({ date, amount, category, card, note, createdAt: Date.now() });
+  document.getElementById('exp-amount').value='';
+  document.getElementById('exp-note').value='';
+  toast('Expense saved');
+  document.querySelector('[data-target="dashboard"]').click();
+};
+
+/* ---------------- RATE HELPERS ---------------- */
+function rateFor(card, category){
+  return (rates[card] && rates[card][category] != null) ? rates[card][category] : DEFAULT_RATE;
+}
+function milesFor(entry){
+  return entry.amount * rateFor(entry.card, entry.category);
 }
 
-function bankClass(bank) {
-  return `badge-${bank.toLowerCase()}`;
+/* ---------------- DASHBOARD ---------------- */
+function renderDashboard(){
+  const list = Object.values(expenses);
+  let totalMiles = 0, totalSpend = 0;
+  const perCard = {}; CARDS.forEach(c=>perCard[c]={miles:0,spend:0});
+
+  list.forEach(e => {
+    const m = milesFor(e);
+    totalMiles += m; totalSpend += e.amount;
+    if(perCard[e.card]){ perCard[e.card].miles += m; perCard[e.card].spend += e.amount; }
+  });
+
+  document.getElementById('total-miles').textContent = Math.round(totalMiles).toLocaleString();
+  document.getElementById('total-spend-sub').textContent = 'from $' + totalSpend.toFixed(2) + ' tracked spend';
+
+  const grid = document.getElementById('card-grid');
+  grid.innerHTML = '';
+  CARDS.forEach(c => {
+    const d = perCard[c];
+    grid.innerHTML += `<div class="mini-card">
+      <div class="label">${c}</div>
+      <div class="val mono">${Math.round(d.miles).toLocaleString()} mi</div>
+      <div class="spend">$${d.spend.toFixed(2)} spend</div>
+    </div>`;
+  });
+
+  const bestList = document.getElementById('best-list');
+  bestList.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    let bestCard = CARDS[0], bestRate = rateFor(CARDS[0], cat);
+    CARDS.forEach(c => { const r = rateFor(c,cat); if(r > bestRate){ bestRate = r; bestCard = c; } });
+    bestList.innerHTML += `<div class="best-row">
+      <span class="cat">${cat}</span>
+      <span class="best-badge">${bestCard} · ${bestRate} mpd</span>
+    </div>`;
+  });
 }
 
-function renderCards() {
-  const el = document.getElementById('cardsList');
-  if (state.cards.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">💳</div><p>No cards yet. Tap "Add / Manage Cards" to get started.</p></div>`;
+/* ---------------- HISTORY ---------------- */
+function renderHistory(){
+  const container = document.getElementById('history-list');
+  const keys = Object.keys(expenses).sort((a,b) => (expenses[b].createdAt||0) - (expenses[a].createdAt||0));
+
+  if(keys.length === 0){
+    container.innerHTML = `<div class="empty-state"><span class="plane">✈</span>No expenses logged yet.<br>Add your first one to start tracking miles.</div>`;
     return;
   }
-  el.innerHTML = state.cards.map(c => `
-    <div class="card-item" data-card-id="${c.id}" onclick="toggleCardDetail('${c.id}')" style="flex-direction:column;align-items:stretch;">
-      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-        <div class="card-item-left">
-          <div class="card-name">${c.name}</div>
-          <span class="bank-badge ${bankClass(c.bank)}">${c.bank}</span>
-          ${c.type === 'points' ? `<div class="card-points" style="margin-top:3px">Earns points → KrisFlyer</div>` : ''}
-          ${c.chosenCategoryCard ? `<div class="card-points" style="margin-top:3px">★ 4 mpd on <strong>${c.chosenCategory}</strong>, 0.4 mpd elsewhere</div>` : ''}
+
+  container.innerHTML = keys.map(k => {
+    const e = expenses[k];
+    const m = milesFor(e);
+    return `<div class="stub">
+      <div class="main">
+        <div class="top-row">
+          <span class="card-chip">${e.card}</span>
+          <span class="date">${e.date}</span>
         </div>
-        <div class="card-item-right">
-          <div class="card-miles">${(c.balance || 0).toLocaleString()}</div>
-          <div class="card-miles-label">KrisFlyer miles</div>
-        </div>
+        <div class="cat">${e.category}</div>
+        ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
       </div>
-      ${(c.exclusions || c.cap) ? `
-      <div id="detail-${c.id}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:12px; line-height:1.5;">
-        ${c.cap ? `<div style="margin-bottom:6px;"><strong>Bonus cap:</strong> S$${c.cap.toLocaleString()}/month</div>` : ''}
-        ${c.exclusions ? `<div style="color:var(--muted);"><strong style="color:var(--danger)">⚠️ Excluded:</strong> ${c.exclusions}</div>` : ''}
-        ${c.notes ? `<div style="color:var(--muted); margin-top:6px;">ℹ️ ${c.notes}</div>` : ''}
-      </div>` : ''}
+      <div class="miles-col">
+        <div class="amt mono">$${e.amount.toFixed(2)}</div>
+        <div class="mi mono">+${Math.round(m)}</div>
+      </div>
+      <button class="del" data-key="${k}" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => expensesRef.child(btn.dataset.key).remove();
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
+
+/* ---------------- SETTINGS / RATES ---------------- */
+function renderSettings(){
+  const container = document.getElementById('rates-container');
+  container.innerHTML = CARDS.map(card => `
+    <div class="card-block">
+      <h3>${card}</h3>
+      <div class="rate-table">
+        <div class="rate-row head"><span>Category</span><span>Mpd</span></div>
+        ${CATEGORIES.map(cat => `
+          <div class="rate-row">
+            <span>${cat}</span>
+            <input type="number" step="0.1" min="0" data-card="${card}" data-cat="${cat}" value="${rateFor(card,cat)}">
+          </div>
+        `).join('')}
+      </div>
     </div>
   `).join('');
 }
 
-function toggleCardDetail(id) {
-  const detail = document.getElementById('detail-' + id);
-  if (!detail) return;
-  detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-}
-
-function renderLog() {
-  const el = document.getElementById('txnList');
-  const txns = getFilteredTxns().sort((a, b) => b.date.localeCompare(a.date));
-  if (txns.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No transactions for ${MONTHS[state.currentMonth]} ${state.currentYear}.<br>Tap + to add one.</p></div>`;
-    return;
-  }
-  let html = '';
-  let lastDate = '';
-  txns.forEach(t => {
-    const card = state.cards.find(c => c.id === t.cardId);
-    if (t.date !== lastDate) {
-      const d = new Date(t.date + 'T00:00:00');
-      html += `<div class="date-divider">${d.toLocaleDateString('en-SG', { weekday:'short', day:'numeric', month:'short' })}</div>`;
-      lastDate = t.date;
-    }
-    html += `
-      <div class="txn-item" onclick="deleteTxn('${t.id}')">
-        <div class="txn-left">
-          <div class="txn-merchant">${t.merchant}</div>
-          <div class="txn-meta">
-            <span>${card ? card.name : '—'}</span>
-            <span class="txn-cat">${CAT_LABELS[t.cat] || t.cat}</span>
-          </div>
-        </div>
-        <div class="txn-right">
-          <div class="txn-miles">+${t.miles.toLocaleString()}</div>
-          <div class="txn-spend">S$${Number(t.amount).toFixed(2)}</div>
-        </div>
-      </div>`;
+document.getElementById('save-rates').onclick = () => {
+  const inputs = document.querySelectorAll('#rates-container input');
+  const updated = {};
+  CARDS.forEach(c => updated[c] = {});
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    updated[inp.dataset.card][inp.dataset.cat] = isNaN(v) ? DEFAULT_RATE : v;
   });
-  el.innerHTML = html;
+  ratesRef.set(updated);
+  toast('Rates saved');
+};
+
+/* ---------------- TOAST ---------------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2000);
 }
-
-function renderSummary() {
-  const txns = getFilteredTxns();
-  const monthTotal = txns.reduce((s, t) => s + t.miles, 0);
-  document.getElementById('summaryMonthTotal').textContent = monthTotal.toLocaleString();
-
-  const byCard = {};
-  txns.forEach(t => {
-    if (!byCard[t.cardId]) byCard[t.cardId] = { total: 0, cats: {} };
-    byCard[t.cardId].total += t.miles;
-    byCard[t.cardId].cats[t.cat] = (byCard[t.cardId].cats[t.cat] || 0) + t.miles;
-  });
-
-  const el = document.getElementById('summaryList');
-  if (Object.keys(byCard).length === 0) {
-    el.innerHTML = `<div class="empty-state"><p>No data for ${MONTHS[state.currentMonth]} ${state.currentYear}.</p></div>`;
-    return;
-  }
-
-  el.innerHTML = Object.entries(byCard).map(([cid, data]) => {
-    const card = state.cards.find(c => c.id === cid);
-    const catRows = Object.entries(data.cats).map(([cat, miles]) =>
-      `<div class="summary-row"><span class="summary-cat">${CAT_LABELS[cat] || cat}</span><span class="summary-cat-val">${miles.toLocaleString()} mi</span></div>`
-    ).join('');
-    return `
-      <div class="summary-card">
-        <div class="summary-header">
-          <span class="summary-bank">${card ? card.name : cid}</span>
-          <span class="summary-total">${data.total.toLocaleString()} mi</span>
-        </div>
-        ${catRows}
-      </div>`;
-  }).join('');
-}
-
-function renderBestCard() {
-  const categories = ['dining', 'online', 'transport', 'general'];
-  const bannerEl = document.getElementById('bestCardBanner');
-  const tableEl = document.getElementById('ratesTable');
-
-  if (state.cards.length === 0) {
-    bannerEl.innerHTML = '<div style="color:var(--muted);font-size:13px">Add cards to see recommendations.</div>';
-    tableEl.innerHTML = '';
-    return;
-  }
-
-  // Best card per category
-  const catEmojis = { dining: '🍜', online: '🛒', transport: '🚇', general: '🔄' };
-  let bannerRows = categories.map(cat => {
-    let best = null, bestRate = -1;
-    state.cards.forEach(c => {
-      const r = (c.rates && c.rates[cat]) || 0;
-      if (r > bestRate) { bestRate = r; best = c; }
-    });
-    return best ? `
-      <div class="best-card-row">
-        <span class="best-cat">${catEmojis[cat]} ${CAT_LABELS[cat]}</span>
-        <span class="best-card-name">${best.name.split(' ').slice(0,2).join(' ')}</span>
-        <span class="best-rate">${bestRate} mpd</span>
-      </div>` : '';
-  }).join('');
-  bannerEl.innerHTML = `<div class="label">✦ Use these cards for max miles</div>${bannerRows}`;
-
-  // Full comparison table
-  let tableHtml = categories.map(cat => {
-    const sorted = [...state.cards].sort((a,b) => ((b.rates&&b.rates[cat])||0) - ((a.rates&&a.rates[cat])||0));
-    return `
-      <div class="summary-card">
-        <div class="summary-header">
-          <span class="summary-bank">${catEmojis[cat]} ${CAT_LABELS[cat]}</span>
-        </div>
-        ${sorted.map((c,i) => `
-          <div class="summary-row">
-            <span class="summary-cat">${i===0?'★ ':''}${c.name.split(' ').slice(0,3).join(' ')}</span>
-            <span class="summary-cat-val" style="color:${i===0?'var(--accent)':'inherit'}">${((c.rates&&c.rates[cat])||0)} mpd</span>
-          </div>`).join('')}
-      </div>`;
-  }).join('');
-  tableEl.innerHTML = tableHtml;
-}
-
-// ── ADD TRANSACTION ──
-function openAddTxn() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('txnDate').value = today;
-  document.getElementById('txnMerchant').value = '';
-  document.getElementById('txnAmount').value = '';
-  document.getElementById('previewMilesVal').textContent = '—';
-  document.getElementById('previewPtsNote').textContent = '';
-  // Populate card dropdown
-  const sel = document.getElementById('txnCard');
-  sel.innerHTML = '<option value="">Select card</option>' + state.cards.map(c =>
-    `<option value="${c.id}">${c.name}</option>`
-  ).join('');
-  document.getElementById('addTxnModal').classList.add('open');
-}
-
-function calcMilesPreview() {
-  const amount = parseFloat(document.getElementById('txnAmount').value) || 0;
-  const cardId = document.getElementById('txnCard').value;
-  const cat = document.getElementById('txnCat').value;
-  const card = state.cards.find(c => c.id === cardId);
-  if (!card || !amount) { document.getElementById('previewMilesVal').textContent = '—'; return; }
-  const rate = (card.rates && card.rates[cat]) || card.rates?.general || 1;
-  const miles = Math.floor(amount * rate);
-  document.getElementById('previewMilesVal').textContent = miles.toLocaleString();
-  if (card.chosenCategoryCard) {
-    const matchesBonus = (cat === 'dining' && card.chosenCategory === 'Dining') || (cat === 'transport' && card.chosenCategory === 'Transport');
-    document.getElementById('previewPtsNote').textContent = matchesBonus
-      ? `at ${rate} mpd (your bonus category — cap S$${card.cap}/mo)`
-      : `at ${rate} mpd (not your bonus category: ${card.chosenCategory})`;
-  } else if (card.type === 'points') {
-    document.getElementById('previewPtsNote').textContent = `via points conversion`;
-  } else {
-    document.getElementById('previewPtsNote').textContent = `at ${rate} mpd`;
-  }
-}
-
-function saveTransaction() {
-  const merchant = document.getElementById('txnMerchant').value.trim();
-  const amount = parseFloat(document.getElementById('txnAmount').value);
-  const date = document.getElementById('txnDate').value;
-  const cardId = document.getElementById('txnCard').value;
-  const cat = document.getElementById('txnCat').value;
-  if (!merchant || !amount || !date || !cardId) { alert('Please fill in all fields.'); return; }
-  const card = state.cards.find(c => c.id === cardId);
-  const rate = (card.rates && card.rates[cat]) || 1;
-  const miles = Math.floor(amount * rate);
-  // Add to card balance
-  card.balance = (card.balance || 0) + miles;
-  state.transactions.push({ id: 'tx' + Date.now(), merchant, amount, cat, cardId, date, miles });
-  save();
-  closeModal('addTxnModal');
-  render();
-}
-
-function deleteTxn(id) {
-  if (!confirm('Remove this transaction?')) return;
-  const txn = state.transactions.find(t => t.id === id);
-  if (txn) {
-    const card = state.cards.find(c => c.id === txn.cardId);
-    if (card) card.balance = Math.max(0, (card.balance || 0) - txn.miles);
-  }
-  state.transactions = state.transactions.filter(t => t.id !== id);
-  save(); render();
-}
-
-// ── MANAGE CARDS ──
-function openManageCards() {
-  renderManageCards();
-  document.getElementById('manageCardsModal').classList.add('open');
-}
-
-function renderManageCards() {
-  const el = document.getElementById('manageCardsList');
-  // Remove any old listener by replacing with a clone
-  const newEl = el.cloneNode(false);
-  el.parentNode.replaceChild(newEl, el);
-  const container = document.getElementById('manageCardsList');
-
-  if (state.cards.length === 0) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0">No cards added yet.</div>';
-    return;
-  }
-
-  container.innerHTML = state.cards.map(c =>
-    '<div class="manage-card-item" id="mci-' + c.id + '">' +
-      '<div>' +
-        '<div style="font-weight:600;font-size:14px">' + c.name + '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">' + c.bank + ' · ' + (c.type === 'points' ? 'Points → Miles' : 'Direct Miles') + ' · ' + (c.balance||0).toLocaleString() + ' mi</div>' +
-      '</div>' +
-      '<div class="manage-card-actions" id="mca-' + c.id + '">' +
-        '<button class="btn-sm btn-danger-sm" data-action="remove" data-id="' + c.id + '">Remove</button>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-
-  container.addEventListener('click', function(e) {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    e.stopPropagation();
-    const action = btn.getAttribute('data-action');
-    const id = btn.getAttribute('data-id');
-
-    if (action === 'remove') {
-      const actionsEl = document.getElementById('mca-' + id);
-      actionsEl.innerHTML =
-        '<span style="font-size:12px;color:var(--muted);margin-right:6px">Sure?</span>' +
-        '<button class="btn-sm btn-danger-sm" data-action="confirm-delete" data-id="' + id + '">Yes, remove</button>' +
-        '<button class="btn-sm" data-action="cancel" data-id="' + id + '" style="margin-left:4px">Cancel</button>';
-    } else if (action === 'confirm-delete') {
-      state.cards = state.cards.filter(function(c) { return c.id !== id; });
-      state.transactions = state.transactions.filter(function(t) { return t.cardId !== id; });
-      save();
-      render();
-      renderManageCards();
-    } else if (action === 'cancel') {
-      renderManageCards();
-    }
-  });
-}
-
-function toggleAddCardForm() {
-  const form = document.getElementById('addCardForm');
-  const btn = document.getElementById('showAddCardBtn');
-  const visible = form.style.display !== 'none';
-  form.style.display = visible ? 'none' : 'block';
-  btn.textContent = visible ? '+ Add New Card' : '− Cancel';
-  // Watch card type for points conversion fields
-  document.getElementById('newCardType').onchange = function() {
-    const isPoints = this.value === 'points';
-    document.getElementById('conversionField').style.display = isPoints ? 'block' : 'none';
-    document.getElementById('conversionRateField').style.display = isPoints ? 'block' : 'none';
-  };
-}
-
-function applyCardTemplate() {
-  const pickerVal = document.getElementById('cardPicker').value;
-  const banner = document.getElementById('cardInfoBanner');
-  const catField = document.getElementById('chosenCategoryField');
-  const catSelect = document.getElementById('newCardChosenCategory');
-  const earnRatesSection = document.getElementById('earnRatesSection');
-
-  if (!pickerVal || pickerVal === '__manual__') {
-    banner.style.display = 'none';
-    catField.style.display = 'none';
-    earnRatesSection.style.display = 'block';
-    return;
-  }
-
-  const tpl = getCardTemplate(pickerVal);
-  if (!tpl) { banner.style.display = 'none'; catField.style.display = 'none'; return; }
-
-  // Autofill fields
-  document.getElementById('newCardName').value = tpl.name;
-  document.getElementById('newCardBank').value = tpl.bank;
-  document.getElementById('newCardType').value = tpl.type;
-  document.getElementById('newCardType').dispatchEvent(new Event('change'));
-
-  if (tpl.chosenCategoryCard) {
-    // Special mechanic: show category picker, hide manual rate inputs (computed dynamically)
-    catSelect.innerHTML = '<option value="">— Select your enrolled category —</option>' +
-      tpl.chosenCategoryOptions.map(c => `<option value="${c}">${c}</option>`).join('');
-    catField.style.display = 'block';
-    earnRatesSection.style.display = 'none';
-    document.getElementById('newCardCap').value = tpl.cap || '';
-  } else {
-    catField.style.display = 'none';
-    earnRatesSection.style.display = 'block';
-    document.getElementById('rateGeneral').value = tpl.rates.general;
-    document.getElementById('rateDining').value = tpl.rates.dining;
-    document.getElementById('rateOnline').value = tpl.rates.online;
-    document.getElementById('rateTransport').value = tpl.rates.transport;
-    document.getElementById('newCardCap').value = tpl.cap || '';
-  }
-
-  // Show exclusions/notes banner
-  document.getElementById('cardExclusionsText').textContent = tpl.exclusions || '—';
-  document.getElementById('cardNotesText').textContent = tpl.notes ? 'ℹ️ ' + tpl.notes : '';
-  banner.style.display = 'block';
-}
-
-function saveCard() {
-  const name = document.getElementById('newCardName').value.trim();
-  const bank = document.getElementById('newCardBank').value;
-  const type = document.getElementById('newCardType').value;
-  const balance = parseInt(document.getElementById('newCardBalance').value) || 0;
-  const cap = parseFloat(document.getElementById('newCardCap').value) || null;
-  if (!name) { alert('Enter a card name.'); return; }
-
-  const pickerVal = document.getElementById('cardPicker').value;
-  const tpl = (pickerVal && pickerVal !== '__manual__') ? getCardTemplate(pickerVal) : null;
-  const exclusions = tpl ? tpl.exclusions : '';
-  const notes = tpl ? tpl.notes : '';
-
-  let rates, chosenCategoryCard = false, chosenCategory = null, baseRate = null, bonusRate = null;
-
-  if (tpl && tpl.chosenCategoryCard) {
-    chosenCategory = document.getElementById('newCardChosenCategory').value;
-    if (!chosenCategory) { alert("Please select your chosen bonus category for this card."); return; }
-    chosenCategoryCard = true;
-    baseRate = tpl.baseRate;
-    bonusRate = tpl.bonusRate;
-    // Map chosen category to this app's 4 tracked categories where possible.
-    // Only Dining and Transport have a direct match; everything else (Travel, Fashion,
-    // Beauty & Wellness, Family, Entertainment) doesn't map to our General/Online buckets,
-    // so those still earn the base rate unless the user explicitly matches Dining/Transport.
-    rates = {
-      general: baseRate,
-      dining: chosenCategory === 'Dining' ? bonusRate : baseRate,
-      online: baseRate,
-      transport: chosenCategory === 'Transport' ? bonusRate : baseRate
-    };
-  } else {
-    rates = {
-      general: parseFloat(document.getElementById('rateGeneral').value) || 1.2,
-      dining: parseFloat(document.getElementById('rateDining').value) || 1.2,
-      online: parseFloat(document.getElementById('rateOnline').value) || 1.2,
-      transport: parseFloat(document.getElementById('rateTransport').value) || 1.2
-    };
-  }
-
-  state.cards.push({
-    id: 'c' + Date.now(), name, bank, type, rates, balance, cap, exclusions, notes,
-    chosenCategoryCard, chosenCategory, baseRate, bonusRate
-  });
-  save(); render(); renderManageCards();
-  document.getElementById('addCardForm').style.display = 'none';
-  document.getElementById('showAddCardBtn').textContent = '+ Add New Card';
-  document.getElementById('cardInfoBanner').style.display = 'none';
-  document.getElementById('chosenCategoryField').style.display = 'none';
-  document.getElementById('earnRatesSection').style.display = 'block';
-  document.getElementById('cardPicker').value = '';
-  ['newCardName','newCardBalance','rateGeneral','rateDining','rateOnline','rateTransport','newCardCap'].forEach(id => document.getElementById(id).value = '');
-}
-
-// deleteCard is now handled inline by renderManageCards event delegation
-
-// ── NAVIGATION ──
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const idx = ['cards','log','summary','best'].indexOf(name);
-  if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open');
-  });
-});
-
-// ── INIT ──
-load();
-seedData();
-save();
-render();
-document.getElementById('currentMonthLabel').textContent = `${MONTHS[state.currentMonth]} ${state.currentYear}`;
 </script>
 </body>
+</html>
 </html>
