@@ -995,17 +995,40 @@ function toggleCardDetail(cid){
   el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
+function remainingCapFor(cid){
+  const card = cards[cid];
+  if(!card || !card.cap) return Infinity; // uncapped = unlimited headroom
+  const used = currentMonthBonusSpend(cid);
+  return Math.max(0, card.cap - used);
+}
+
 function renderBestListInto(container){
   const cardIds = Object.keys(cards);
   if(cardIds.length === 0){ container.innerHTML = ''; return; }
   container.innerHTML = '';
   CATEGORIES.forEach(cat => {
-    const key = CAT_TO_KEY[cat];
-    let bestId = cardIds[0], bestRate = rateFor(cardIds[0], cat);
-    cardIds.forEach(cid => { const r = rateFor(cid, cat); if(r > bestRate){ bestRate = r; bestId = cid; } });
+    // Find the best rate for this category across all cards
+    let bestRate = -Infinity;
+    cardIds.forEach(cid => { const r = rateFor(cid, cat); if(r > bestRate) bestRate = r; });
+
+    // Collect every card that ties for that best rate
+    const tied = cardIds.filter(cid => rateFor(cid, cat) === bestRate);
+
+    let winners = tied;
+    if(tied.length > 1){
+      // Tie-break: prefer whichever tied card has more bonus-cap headroom left this month
+      let maxHeadroom = -Infinity;
+      tied.forEach(cid => { const h = remainingCapFor(cid); if(h > maxHeadroom) maxHeadroom = h; });
+      winners = tied.filter(cid => remainingCapFor(cid) === maxHeadroom);
+    }
+
+    const label = winners.length > 1
+      ? winners.map(cid => cards[cid].name).join(' / ') + ` · ${bestRate} mpd (tied)`
+      : `${cards[winners[0]].name} · ${bestRate} mpd`;
+
     container.innerHTML += `<div class="best-row">
       <span class="cat">${cat}</span>
-      <span class="best-badge">${cards[bestId].name} · ${bestRate} mpd</span>
+      <span class="best-badge">${label}</span>
     </div>`;
   });
 }
@@ -1076,6 +1099,7 @@ function renderManageCards(){
           ${c.cap ? `<div class="meta">This month's declared prior spend: S$${declaredThisMonth.toFixed(0)}</div>` : ''}
         </div>
         <div id="mgr-actions-${cid}">
+          <button class="btn-sm" data-action="edit-card" data-id="${cid}" style="margin-right:6px;">Edit</button>
           ${c.cap ? `<button class="btn-sm" data-action="edit-spend" data-id="${cid}" style="margin-right:6px;">Set spend</button>` : ''}
           <button class="btn-sm danger" data-action="remove" data-id="${cid}">Remove</button>
         </div>
@@ -1120,6 +1144,8 @@ function renderManageCards(){
         priorSpendMonth: val > 0 ? nowMonth : null
       });
       toast('Updated this month\'s spend');
+    } else if(action === 'edit-card'){
+      openEditCardForm(cid);
     }
   };
 }
@@ -1131,12 +1157,56 @@ function renderCardsBestList(){
 
 const addCardForm = document.getElementById('add-card-form');
 const showAddCardBtn = document.getElementById('show-add-card-btn');
+let editingCardId = null; // null = adding a new card; set = editing an existing one
+
 showAddCardBtn.onclick = () => {
   const visible = addCardForm.style.display !== 'none';
   addCardForm.style.display = visible ? 'none' : 'block';
   showAddCardBtn.textContent = visible ? '+ Add a card' : '− Cancel';
   if(!visible) resetAddCardForm();
 };
+
+function openEditCardForm(cid){
+  const card = cards[cid];
+  if(!card) return;
+  editingCardId = cid;
+
+  addCardForm.style.display = 'block';
+  showAddCardBtn.textContent = '− Cancel';
+  document.getElementById('card-picker').value = '__manual__'; // editing always treats fields as manual/authoritative
+  document.getElementById('card-info-banner').style.display = 'none';
+
+  document.getElementById('new-card-name').value = card.name;
+  document.getElementById('new-card-bank').value = card.bank;
+  document.getElementById('new-card-cap').value = card.cap || '';
+  document.getElementById('new-card-balance').value = card.balance || '';
+  updatePriorSpendVisibility();
+
+  const nowMonth = new Date().toISOString().slice(0,7);
+  document.getElementById('new-card-prior-spend').value = priorSpendFor(card, nowMonth) || '';
+
+  const catField = document.getElementById('chosen-category-field');
+  const ratesSection = document.getElementById('earn-rates-section');
+
+  if(card.chosenCategoryCard){
+    const tpl = CARD_DATABASE.find(t => t.chosenCategoryCard); // UOB Lady's Card template, for its category options
+    const sel = document.getElementById('new-card-chosen-category');
+    sel.innerHTML = '<option value="">— Select your enrolled category —</option>' +
+      (tpl ? tpl.chosenCategoryOptions.map(c => `<option value="${c}">${c}</option>`).join('') : '');
+    sel.value = card.chosenCategory || '';
+    catField.style.display = 'block';
+    ratesSection.style.display = 'none';
+  } else {
+    catField.style.display = 'none';
+    ratesSection.style.display = 'block';
+    renderRateInputs(card.rates);
+  }
+
+  document.getElementById('save-card-btn').textContent = 'Save changes';
+
+  // Scroll the form into view so the user sees they're now editing
+  addCardForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 function updatePriorSpendVisibility(){
   const capVal = parseFloat(document.getElementById('new-card-cap').value);
@@ -1145,6 +1215,8 @@ function updatePriorSpendVisibility(){
 document.getElementById('new-card-cap').addEventListener('input', updatePriorSpendVisibility);
 
 function resetAddCardForm(){
+  editingCardId = null;
+  document.getElementById('save-card-btn').textContent = 'Save card';
   document.getElementById('card-picker').value = '';
   document.getElementById('card-info-banner').style.display = 'none';
   document.getElementById('chosen-category-field').style.display = 'none';
@@ -1219,31 +1291,33 @@ document.getElementById('save-card-btn').onclick = () => {
   const pickerVal = document.getElementById('card-picker').value;
   const tpl = (pickerVal && pickerVal !== '__manual__') ? getCardTemplate(pickerVal) : null;
 
+  // Whether this card uses the chosen-category mechanic: true if a fresh template
+  // says so, OR (when editing) if the existing card already had it and the
+  // category field is still showing.
+  const existingCard = editingCardId ? cards[editingCardId] : null;
+  const isChosenCategoryCard = tpl ? !!tpl.chosenCategoryCard : (existingCard ? !!existingCard.chosenCategoryCard : false);
+
   let rates, type = 'points', chosenCategoryCard = false, chosenCategory = null, exclusions = '', notes = '';
 
-  if(tpl){
-    type = tpl.type;
-    exclusions = tpl.exclusions || '';
-    notes = tpl.notes || '';
-    if(tpl.chosenCategoryCard){
-      chosenCategory = document.getElementById('new-card-chosen-category').value;
-      if(!chosenCategory){ toast('Select your chosen bonus category'); return; }
-      chosenCategoryCard = true;
-      const base = tpl.baseRate, bonus = tpl.bonusRate;
-      rates = {
-        general: base,
-        dining: chosenCategory === 'Dining' ? bonus : base,
-        online: base,
-        transport: chosenCategory === 'Transport' ? bonus : base
-      };
-    } else {
-      rates = {
-        general: parseFloat(document.getElementById('rate-general').value) || DEFAULT_RATE,
-        dining: parseFloat(document.getElementById('rate-dining').value) || DEFAULT_RATE,
-        online: parseFloat(document.getElementById('rate-online').value) || DEFAULT_RATE,
-        transport: parseFloat(document.getElementById('rate-transport').value) || DEFAULT_RATE
-      };
-    }
+  if(isChosenCategoryCard){
+    chosenCategory = document.getElementById('new-card-chosen-category').value;
+    if(!chosenCategory){ toast('Select your chosen bonus category'); return; }
+    chosenCategoryCard = true;
+
+    const base = tpl ? tpl.baseRate : (existingCard.baseRate != null ? existingCard.baseRate : 0.4);
+    const bonus = tpl ? tpl.bonusRate : (existingCard.bonusRate != null ? existingCard.bonusRate : 4.0);
+    type = tpl ? tpl.type : (existingCard.type || 'points');
+    exclusions = tpl ? (tpl.exclusions || '') : (existingCard.exclusions || '');
+    notes = tpl ? (tpl.notes || '') : (existingCard.notes || '');
+
+    rates = {
+      general: base,
+      dining: chosenCategory === 'Dining' ? bonus : base,
+      online: base,
+      transport: chosenCategory === 'Transport' ? bonus : base
+    };
+
+    var cardPayload = { name, bank, type, rates, cap, exclusions, notes, balance, chosenCategoryCard, chosenCategory, baseRate: base, bonusRate: bonus, priorSpendAmount, priorSpendMonth };
   } else {
     rates = {
       general: parseFloat(document.getElementById('rate-general').value) || DEFAULT_RATE,
@@ -1251,13 +1325,25 @@ document.getElementById('save-card-btn').onclick = () => {
       online: parseFloat(document.getElementById('rate-online').value) || DEFAULT_RATE,
       transport: parseFloat(document.getElementById('rate-transport').value) || DEFAULT_RATE
     };
+    type = tpl ? tpl.type : (existingCard ? existingCard.type : 'points');
+    exclusions = tpl ? (tpl.exclusions || '') : (existingCard ? (existingCard.exclusions || '') : '');
+    notes = tpl ? (tpl.notes || '') : (existingCard ? (existingCard.notes || '') : '');
+
+    var cardPayload = { name, bank, type, rates, cap, exclusions, notes, balance, chosenCategoryCard: false, chosenCategory: null, priorSpendAmount, priorSpendMonth };
   }
 
-  cardsRef.push({ name, bank, type, rates, cap, exclusions, notes, balance, chosenCategoryCard, chosenCategory, priorSpendAmount, priorSpendMonth });
+  if(editingCardId){
+    cardsRef.child(editingCardId).update(cardPayload);
+    toast('Card updated');
+  } else {
+    cardsRef.push(cardPayload);
+    toast('Card added');
+  }
 
+  editingCardId = null;
+  document.getElementById('save-card-btn').textContent = 'Save card';
   addCardForm.style.display = 'none';
   showAddCardBtn.textContent = '+ Add a card';
-  toast('Card added');
 };
 
 /* ---------------- TOAST ---------------- */
