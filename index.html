@@ -789,7 +789,7 @@ function updateExpPreview(){
   // transactions (i.e. previews as "if I save this now").
   const hypotheticalEntry = { cardId: cid, category: cat, date, amount, createdAt: Number.MAX_SAFE_INTEGER };
   const rate = effectiveRateFor(hypotheticalEntry, expenses);
-  const miles = Math.floor(amount * rate);
+  const miles = Math.round(amount * rate);
   const bonusRate = bonusRateFor(card, cat);
   const hitCap = isBonusCategory(card, cat) && card.cap && rate < bonusRate;
 
@@ -968,7 +968,7 @@ function renderDashboard(){
     const usedThisMonth = c.cap ? currentMonthBonusSpend(cid) : 0;
     const capReached = c.cap && usedThisMonth >= c.cap;
     grid.innerHTML += `<div class="mini-card" onclick="toggleCardDetail('${cid}')">
-      <div class="label">${c.name}</div>
+      <div class="label">${escapeHtml(c.name)}</div>
       <div class="val mono">${Math.round(shownBalance).toLocaleString()} mi</div>
       <div class="spend">$${d.spend.toFixed(2)} logged spend</div>
       ${c.chosenCategoryCard ? `<div class="cat-tag">★ 4 mpd on ${c.chosenCategory || '—'}, 0.4 mpd elsewhere</div>` : ''}
@@ -1023,8 +1023,8 @@ function renderBestListInto(container){
     }
 
     const label = winners.length > 1
-      ? winners.map(cid => cards[cid].name).join(' / ') + ` · ${bestRate} mpd (tied)`
-      : `${cards[winners[0]].name} · ${bestRate} mpd`;
+      ? winners.map(cid => escapeHtml(cards[cid].name)).join(' / ') + ` · ${bestRate} mpd (tied)`
+      : `${escapeHtml(cards[winners[0]].name)} · ${bestRate} mpd`;
 
     container.innerHTML += `<div class="best-row">
       <span class="cat">${cat}</span>
