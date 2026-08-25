@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Kana Dojo — Hiragana &amp; Katakana Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F2E7;
+    --panel:#FFFDF8;
+    --ink:#211E1A;
+    --ink-soft:#6B6459;
+    --red:#B23A2E;
+    --red-soft:rgba(178,58,46,0.12);
+    --gold:#C9A15A;
+    --line:rgba(33,30,26,0.12);
+    --box0:#C0503F;
+    --box1:#D48A3E;
+    --box2:#D6B23E;
+    --box3:#9AB25C;
+    --box4:#5E9A6B;
+    --box5:#2F7D5C;
+    --unseen:#D9D2C3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:24px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .kana-font{font-family:'Noto Sans JP',sans-serif;}
+  button{font-family:inherit;cursor:pointer;}
+  .hidden{display:none !important;}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 8px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:20px;
+    width:36px;height:36px;border-radius:10px;background:var(--red);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand h1{font-size:19px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+    font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--ink);
+  }
+
+  main{padding:12px 20px 20px;flex:1;}
+  .screen{display:flex;flex-direction:column;gap:14px;}
+
+  /* surprise banner */
+  .surprise-banner{
+    margin:6px 20px 0;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--red),#8f2c22);
+    color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .surprise-banner strong{font-size:14px;}
+  .surprise-banner p{margin:2px 0 0;font-size:12px;opacity:.9;}
+  .surprise-banner-actions{display:flex;flex-direction:column;gap:6px;}
+  .surprise-banner-actions button{white-space:nowrap;}
+
+  /* cards / buttons */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .stat-row{display:flex;gap:10px;}
+  .stat-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;}
+  .stat-box .num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;}
+  .stat-box .lbl{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+
+  .btn-primary{
+    width:100%;padding:14px;border:none;border-radius:12px;background:var(--red);
+    color:#fff;font-weight:700;font-size:15px;letter-spacing:.01em;
+  }
+  .btn-primary.small{width:auto;padding:8px 14px;font-size:12px;border-radius:8px;}
+  .btn-primary:disabled{opacity:.5;}
+  .btn-ghost{
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    color:var(--ink);font-size:14px;font-weight:600;
+  }
+  .btn-ghost.small{width:auto;padding:7px 12px;font-size:12px;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4);}
+  .link-btn{background:none;border:none;color:var(--ink-soft);font-size:13px;text-decoration:underline;}
+
+  .hint{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0;}
+  details.about{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  details.about summary{font-weight:600;font-size:13.5px;cursor:pointer;}
+  details.about p,details.about ul{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin:8px 0 0;padding-left:0;}
+  details.about ul{padding-left:18px;}
+
+  /* practice screen */
+  .practice-top{display:flex;align-items:center;justify-content:space-between;}
+  .timer{font-size:16px;font-weight:600;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:10px;}
+  .progress-count{font-size:12px;color:var(--ink-soft);}
+  .flashcard{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    min-height:180px;display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;
+  }
+  .kana-big{font-size:96px;font-weight:700;}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .choice-btn{
+    padding:16px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);
+    font-size:16px;font-weight:600;color:var(--ink);position:relative;
+  }
+  .choice-btn .key-hint{position:absolute;top:6px;left:8px;font-size:10px;color:var(--ink-soft);font-weight:500;}
+  .choice-btn.correct{background:rgba(47,125,92,0.15);border-color:var(--box4);color:var(--box5);}
+  .choice-btn.wrong{background:rgba(178,58,46,0.12);border-color:var(--red);color:var(--red);}
+  .choice-btn:disabled{opacity:.85;}
+  .feedback{text-align:center;font-size:13px;color:var(--ink-soft);min-height:18px;}
+
+  /* summary */
+  .summary-hero{text-align:center;padding:10px 0;}
+  .summary-hero .pct{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:700;color:var(--red);}
+  .summary-hero .sub{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+  .weak-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .weak-chip{
+    display:flex;align-items:center;gap:6px;background:var(--red-soft);border:1px solid rgba(178,58,46,.25);
+    border-radius:10px;padding:6px 10px;font-size:13px;
+  }
+  .weak-chip .k{font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:16px;}
+
+  /* progress grid */
+  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:4px 0 -4px;}
+  .kgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .ktile{
+    aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#fff;font-family:'Noto Sans JP',sans-serif;
+  }
+  .ktile .k{font-size:15px;font-weight:700;line-height:1;}
+  .ktile .r{font-size:8px;opacity:.85;margin-top:2px;font-family:'Inter',sans-serif;}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);align-items:center;}
+  .legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:3px;vertical-align:-1px;}
+  .history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .history-row:last-child{border-bottom:none;}
+  .history-row .delta.up{color:var(--box5);}
+  .history-row .delta.down{color:var(--red);}
+
+  /* settings */
+  .setting-group{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .setting-group h3{font-size:13px;margin-bottom:10px;}
+  .checkline{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px;}
+  .checkline .desc{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .switch{position:relative;width:42px;height:24px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .track{position:absolute;inset:0;background:var(--unseen);border-radius:99px;transition:.15s;}
+  .switch .track:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+  .switch input:checked + .track{background:var(--red);}
+  .switch input:checked + .track:before{transform:translateX(18px);}
+  .danger-btn{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(178,58,46,.35);background:rgba(178,58,46,.06);color:var(--red);font-weight:600;font-size:13px;}
+  .row-2{display:flex;gap:10px;}
+  .row-2 > *{flex:1;}
+  input[type=file]{font-size:12px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">力</span>
+      <h1>Kana Dojo</h1>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+  </div>
+
+  <div id="surpriseBanner" class="surprise-banner hidden">
+    <div>
+      <strong>🎴 Surprise Check-In</strong>
+      <p>It's been a few days — see where your recall really stands.</p>
+    </div>
+    <div class="surprise-banner-actions">
+      <button class="btn-primary small" id="surpriseStartBtn">Start</button>
+      <button class="btn-ghost small" id="surpriseLaterBtn">Tomorrow</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- HOME -->
+    <section id="screen-home" class="screen">
+      <div class="stat-row">
+        <div class="stat-box"><div class="num mono" id="statMastered">0</div><div class="lbl">Mastered</div></div>
+        <div class="stat-box"><div class="num mono" id="statStreak">0</div><div class="lbl">Day streak</div></div>
+        <div class="stat-box"><div class="num mono" id="statDue">0</div><div class="lbl">Due now</div></div>
+      </div>
+
+      <button class="btn-primary" id="startPracticeBtn" style="padding:20px;font-size:17px;">▶ Start 5-Min Practice</button>
+      <div class="row-2">
+        <button class="btn-ghost" id="viewProgressBtn">📊 Progress</button>
+        <button class="btn-ghost" id="takeSurpriseBtn">🎴 Surprise Test</button>
+      </div>
+
+      <details class="about">
+        <summary>How this works</summary>
+        <p>Each round shows you a kana and four romaji options. Get one right and it moves up a "box"; get it wrong and it drops back — so struggling characters resurface sooner and mastered ones fade out. That's spaced repetition, and it's why five focused minutes a day beats an hour of passive reading.</p>
+        <ul>
+          <li>New characters are introduced gradually, a few per session.</li>
+          <li>Characters "due" for review are prioritized automatically.</li>
+          <li>Every few days (randomly, so it stays a genuine test) a longer <em>Surprise Test</em> pulls from everything you've learned so far and logs your score over time.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- PRACTICE / SURPRISE TEST (shared runner) -->
+    <section id="screen-practice" class="screen hidden">
+      <div class="practice-top">
+        <div class="timer mono" id="timerDisplay">5:00</div>
+        <div class="progress-count mono" id="countDisplay">0 reviewed</div>
+        <button class="link-btn" id="endSessionBtn">End</button>
+      </div>
+      <div class="flashcard">
+        <div class="kana-big kana-font" id="kanaDisplay">あ</div>
+      </div>
+      <div class="choices" id="choicesWrap"></div>
+      <div class="feedback" id="feedback">&nbsp;</div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section id="screen-summary" class="screen hidden">
+      <div class="card summary-hero">
+        <div class="pct mono" id="summaryPct">0%</div>
+        <div class="sub" id="summarySub">0 of 0 correct</div>
+      </div>
+      <div id="summaryDeltaWrap" class="card hidden">
+        <div class="section-title" style="margin:0 0 6px;">vs. last surprise test</div>
+        <div id="summaryDelta" style="font-size:14px;font-weight:600;"></div>
+      </div>
+      <div id="summaryWeakWrap" class="hidden">
+        <div class="section-title">Focus on these next</div>
+        <div class="weak-list" id="summaryWeak"></div>
+      </div>
+      <button class="btn-primary" id="summaryHomeBtn">Back to Home</button>
+    </section>
+
+    <!-- PROGRESS -->
+    <section id="screen-progress" class="screen hidden">
+      <button class="link-btn" id="progressBackBtn">← Back</button>
+      <div class="stat-row">
+        <div class="stat-box"><div class="num mono" id="progHira">0/0</div><div class="lbl">Hiragana</div></div>
+        <div class="stat-box"><div class="num mono" id="progKata">0/0</div><div class="lbl">Katakana</div></div>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--unseen)"></span>New</span>
+        <span><span class="dot" style="background:var(--box0)"></span>Struggling</span>
+        <span><span class="dot" style="background:var(--box2)"></span>Learning</span>
+        <span><span class="dot" style="background:var(--box5)"></span>Mastered</span>
+      </div>
+      <div id="progressGrids"></div>
+      <div class="section-title">Surprise test history</div>
+      <div class="card" id="surpriseHistoryWrap"><div class="hint">No surprise tests taken yet.</div></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="screen-settings" class="screen hidden">
+      <button class="link-btn" id="settingsBackBtn">← Back</button>
+
+      <div class="setting-group">
+        <h3>Scripts</h3>
+        <div class="checkline">
+          <div><div>Hiragana</div><div class="desc">ひらがな</div></div>
+          <label class="switch"><input type="checkbox" id="cfgHiragana"><span class="track"></span></label>
+        </div>
+        <div class="checkline">
+          <div><div>Katakana</div><div class="desc">カタカナ</div></div>
+          <label class="switch"><input type="checkbox" id="cfgKatakana"><span class="track"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Character sets</h3>
+        <div class="checkline">
+          <div><div>Basic (gojūon)</div><div class="desc">46 core characters — start here</div></div>
+          <label class="switch"><input type="checkbox" id="cfgBasic"><span class="track"></span></label>
+        </div>
+        <div class="checkline">
+          <div><div>Dakuten / handakuten</div><div class="desc">が ざ だ ば ぱ — voiced sounds</div></div>
+          <label class="switch"><input type="checkbox" id="cfgDakuten"><span class="track"></span></label>
+        </div>
+        <div class="checkline">
+          <div><div>Yōon (combos)</div><div class="desc">きゃ しゃ ちゃ — combined sounds</div></div>
+          <label class="switch"><input type="checkbox" id="cfgYoon"><span class="track"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Backup</h3>
+        <div class="row-2">
+          <button class="btn-ghost" id="exportBtn">Export progress</button>
+          <button class="btn-ghost" id="importBtn">Import progress</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+      </div>
+
+      <div class="setting-group">
+        <h3>Reset</h3>
+        <button class="danger-btn" id="resetBtn">Reset all progress</button>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- Kana data ---------------- */
+var ROWS = {
+  basic: [
+    ['a','あ','ア'],['i','い','イ'],['u','う','ウ'],['e','え','エ'],['o','お','オ'],
+    ['ka','か','カ'],['ki','き','キ'],['ku','く','ク'],['ke','け','ケ'],['ko','こ','コ'],
+    ['sa','さ','サ'],['shi','し','シ'],['su','す','ス'],['se','せ','セ'],['so','そ','ソ'],
+    ['ta','た','タ'],['chi','ち','チ'],['tsu','つ','ツ'],['te','て','テ'],['to','と','ト'],
+    ['na','な','ナ'],['ni','に','ニ'],['nu','ぬ','ヌ'],['ne','ね','ネ'],['no','の','ノ'],
+    ['ha','は','ハ'],['hi','ひ','ヒ'],['fu','ふ','フ'],['he','へ','ヘ'],['ho','ほ','ホ'],
+    ['ma','ま','マ'],['mi','み','ミ'],['mu','む','ム'],['me','め','メ'],['mo','も','モ'],
+    ['ya','や','ヤ'],['yu','ゆ','ユ'],['yo','よ','ヨ'],
+    ['ra','ら','ラ'],['ri','り','リ'],['ru','る','ル'],['re','れ','レ'],['ro','ろ','ロ'],
+    ['wa','わ','ワ'],['wo','を','ヲ'],
+    ['n','ん','ン']
+  ],
+  dakuten: [
+    ['ga','が','ガ'],['gi','ぎ','ギ'],['gu','ぐ','グ'],['ge','げ','ゲ'],['go','ご','ゴ'],
+    ['za','ざ','ザ'],['ji','じ','ジ'],['zu','ず','ズ'],['ze','ぜ','ゼ'],['zo','ぞ','ゾ'],
+    ['da','だ','ダ'],['ji','ぢ','ヂ'],['zu','づ','ヅ'],['de','で','デ'],['do','ど','ド'],
+    ['ba','ば','バ'],['bi','び','ビ'],['bu','ぶ','ブ'],['be','べ','ベ'],['bo','ぼ','ボ'],
+    ['pa','ぱ','パ'],['pi','ぴ','ピ'],['pu','ぷ','プ'],['pe','ぺ','ペ'],['po','ぽ','ポ']
+  ],
+  yoon: [
+    ['kya','きゃ','キャ'],['kyu','きゅ','キュ'],['kyo','きょ','キョ'],
+    ['sha','しゃ','シャ'],['shu','しゅ','シュ'],['sho','しょ','ショ'],
+    ['cha','ちゃ','チャ'],['chu','ちゅ','チュ'],['cho','ちょ','チョ'],
+    ['nya','にゃ','ニャ'],['nyu','にゅ','ニュ'],['nyo','にょ','ニョ'],
+    ['hya','ひゃ','ヒャ'],['hyu','ひゅ','ヒュ'],['hyo','ひょ','ヒョ'],
+    ['mya','みゃ','ミャ'],['myu','みゅ','ミュ'],['myo','みょ','ミョ'],
+    ['rya','りゃ','リャ'],['ryu','りゅ','リュ'],['ryo','りょ','リョ'],
+    ['gya','ぎゃ','ギャ'],['gyu','ぎゅ','ギュ'],['gyo','ぎょ','ギョ'],
+    ['ja','じゃ','ジャ'],['ju','じゅ','ジュ'],['jo','じょ','ジョ'],
+    ['bya','びゃ','ビャ'],['byu','びゅ','ビュ'],['byo','びょ','ビョ'],
+    ['pya','ぴゃ','ピャ'],['pyu','ぴゅ','ピュ'],['pyo','ぴょ','ピョ']
+  ]
+};
+
+var ALL_CHARS = [];
+Object.keys(ROWS).forEach(function(group){
+  ROWS[group].forEach(function(row){
+    var romaji = row[0], hira = row[1], kata = row[2];
+    ALL_CHARS.push({id:'h:'+hira, script:'hiragana', group:group, kana:hira, romaji:romaji});
+    ALL_CHARS.push({id:'k:'+kata, script:'katakana', group:group, kana:kata, romaji:romaji});
+  });
+});
+var CHAR_BY_ID = {};
+ALL_CHARS.forEach(function(c){ CHAR_BY_ID[c.id] = c; });
+
+/* ---------------- Storage ---------------- */
+var STORAGE_KEY = 'kanaDojo_v1';
+var BOX_INTERVALS = [0,1,2,4,7,14]; // days until due, indexed by box (0..5)
+var NEW_CARD_CAP_PER_SESSION = 10;
+var SURPRISE_MIN_DAYS = 3, SURPRISE_MAX_DAYS = 6;
+var SURPRISE_MIN_SEEN = 10;
+
+function defaultData(){
+  return {
+    settings:{hiragana:true, katakana:true, basic:true, dakuten:false, yoon:false},
+    stats:{}, // id -> {box, due, seen, correct}
+    streak:{current:0, longest:0, lastDate:null},
+    surprise:{lastDate:null, nextDue:null, history:[], postponedToday:false}
+  };
+}
+var DATA = null;
+function loadData(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultData();
+    var parsed = JSON.parse(raw);
+    var d = defaultData();
+    d.settings = Object.assign(d.settings, parsed.settings||{});
+    d.stats = parsed.stats||{};
+    d.streak = Object.assign(d.streak, parsed.streak||{});
+    d.surprise = Object.assign(d.surprise, parsed.surprise||{});
+    return d;
+  }catch(e){ return defaultData(); }
+}
+function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }catch(e){}
+}
+
+/* ---------------- Date helpers ---------------- */
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function addDaysStr(dateStr, n){
+  var d = dateStr ? new Date(dateStr+'T00:00:00') : new Date();
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+/* ---------------- Stats ---------------- */
+function getStat(id){
+  return DATA.stats[id] || {box:-1, due:null, seen:0, correct:0};
+}
+function setStat(id, correct){
+  var s = DATA.stats[id] ? Object.assign({}, DATA.stats[id]) : {box:-1, due:null, seen:0, correct:0};
+  s.seen += 1;
+  if(correct){
+    s.correct += 1;
+    s.box = Math.min(5, s.box+1);
+  } else {
+    s.box = Math.max(0, s.box-1);
+  }
+  s.due = addDaysStr(todayStr(), BOX_INTERVALS[Math.max(0,s.box)]);
+  DATA.stats[id] = s;
+}
+
+/* ---------------- Enabled char set ---------------- */
+function enabledChars(){
+  var s = DATA.settings;
+  var scripts = [];
+  if(s.hiragana) scripts.push('hiragana');
+  if(s.katakana) scripts.push('katakana');
+  if(!scripts.length) scripts = ['hiragana','katakana'];
+  var groups = [];
+  if(s.basic) groups.push('basic');
+  if(s.dakuten) groups.push('dakuten');
+  if(s.yoon) groups.push('yoon');
+  if(!groups.length) groups = ['basic'];
+  return ALL_CHARS.filter(function(c){
+    return scripts.indexOf(c.script)>-1 && groups.indexOf(c.group)>-1;
+  });
+}
+
+/* ---------------- Streak ---------------- */
+function bumpStreak(){
+  var t = todayStr();
+  var y = addDaysStr(t,-1);
+  if(DATA.streak.lastDate === t){ /* already counted today */ }
+  else if(DATA.streak.lastDate === y){ DATA.streak.current += 1; }
+  else { DATA.streak.current = 1; }
+  DATA.streak.longest = Math.max(DATA.streak.longest, DATA.streak.current);
+  DATA.streak.lastDate = t;
+}
+
+/* ---------------- Surprise scheduling ---------------- */
+function ensureSurpriseSchedule(){
+  if(!DATA.surprise.nextDue){
+    DATA.surprise.nextDue = addDaysStr(todayStr(), randInt(SURPRISE_MIN_DAYS, SURPRISE_MAX_DAYS));
+    saveData();
+  }
+}
+function surpriseIsDue(){
+  ensureSurpriseSchedule();
+  if(DATA.surprise.postponedToday) return false;
+  return todayStr() >= DATA.surprise.nextDue;
+}
+function seenCount(){
+  return enabledChars().filter(function(c){ return getStat(c.id).box >= 0; }).length;
+}
+
+/* ---------------- UI: screens ---------------- */
+var screens = ['home','practice','summary','progress','settings'];
+function showScreen(name){
+  screens.forEach(function(s){
+    document.getElementById('screen-'+s).classList.toggle('hidden', s!==name);
+  });
+  if(name==='home') renderHome();
+  if(name==='progress') renderProgress();
+  if(name==='settings') renderSettings();
+}
+
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+
+/* ---------------- Home ---------------- */
+function renderHome(){
+  var chars = enabledChars();
+  var mastered = chars.filter(function(c){ return getStat(c.id).box===5; }).length;
+  var due = chars.filter(function(c){ var s=getStat(c.id); return s.box>=0 && s.due<=todayStr(); }).length;
+  document.getElementById('statMastered').textContent = mastered+'/'+chars.length;
+  document.getElementById('statStreak').textContent = DATA.streak.current;
+  document.getElementById('statDue').textContent = due;
+
+  var banner = document.getElementById('surpriseBanner');
+  if(surpriseIsDue() && seenCount() >= SURPRISE_MIN_SEEN){
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+/* ---------------- Session runner (shared by practice + surprise) ---------------- */
+var session = null; // {type, timerId, remaining, reviewed, correct, current, recentIds, newIntroduced, missed:{}, queueFixed, index}
+
+function pickDistractors(correctChar, n){
+  var pool = ALL_CHARS.filter(function(c){ return c.script===correctChar.script && c.romaji!==correctChar.romaji; });
+  var enabled = enabledChars().filter(function(c){ return c.script===correctChar.script && c.romaji!==correctChar.romaji; });
+  var source = enabled.length >= n ? enabled : pool;
+  var shuffled = source.slice().sort(function(){ return Math.random()-0.5; });
+  var out = [], usedRomaji = {};
+  for(var i=0;i<shuffled.length && out.length<n;i++){
+    var r = shuffled[i].romaji;
+    if(usedRomaji[r]) continue;
+    usedRomaji[r]=true;
+    out.push(shuffled[i]);
+  }
+  return out;
+}
+
+function pickNextPracticeCard(){
+  var chars = enabledChars();
+  var t = todayStr();
+  var pool = chars.map(function(c){ return {c:c, s:getStat(c.id)}; });
+  var overdue = pool.filter(function(p){ return p.s.box>=0 && p.s.due<=t; })
+                     .sort(function(a,b){ return a.s.box-b.s.box; });
+  var unseen = pool.filter(function(p){ return p.s.box<0; });
+  var others = pool.filter(function(p){ return p.s.box>=0 && p.s.due>t; });
+
+  function notRecent(arr){
+    var f = arr.filter(function(p){ return session.recentIds.indexOf(p.c.id)===-1; });
+    return f.length ? f : arr;
+  }
+  overdue = notRecent(overdue); unseen = notRecent(unseen); others = notRecent(others);
+
+  var pick;
+  if(overdue.length && Math.random() < 0.72){
+    pick = overdue[randInt(0, Math.min(2, overdue.length-1))];
+  } else if(unseen.length && session.newIntroduced < NEW_CARD_CAP_PER_SESSION){
+    pick = unseen[randInt(0, unseen.length-1)];
+    session.newIntroduced++;
+  } else if(overdue.length){
+    pick = overdue[randInt(0, overdue.length-1)];
+  } else if(others.length){
+    pick = others[randInt(0, others.length-1)];
+  } else if(unseen.length){
+    pick = unseen[randInt(0, unseen.length-1)];
+  } else {
+    pick = pool[randInt(0, pool.length-1)];
+  }
+  return pick.c;
+}
+
+function buildSurpriseQueue(){
+  var chars = enabledChars().filter(function(c){ return getStat(c.id).box>=0; });
+  var weighted = chars.slice().sort(function(a,b){ return getStat(a.id).box - getStat(b.id).box; });
+  var count = Math.max(SURPRISE_MIN_SEEN, Math.min(30, chars.length));
+  // take a mix: bias toward weaker chars but keep it representative
+  var shuffled = weighted.slice(0, Math.ceil(chars.length*0.6)).sort(function(){return Math.random()-0.5;})
+    .concat(chars.slice().sort(function(){return Math.random()-0.5;}));
+  var seen = {}, queue = [];
+  for(var i=0;i<shuffled.length && queue.length<count;i++){
+    if(seen[shuffled[i].id]) continue;
+    seen[shuffled[i].id]=true;
+    queue.push(shuffled[i]);
+  }
+  return queue;
+}
+
+function startSession(type){
+  if(enabledChars().length < 4){
+    toast('Enable at least a few characters in Settings first.');
+    return;
+  }
+  session = {
+    type: type,
+    reviewed: 0, correct: 0,
+    recentIds: [], newIntroduced: 0,
+    missed: {}, // id -> {kana, romaji, misses}
+    locked: false
+  };
+  if(type==='surprise'){
+    session.queue = buildSurpriseQueue();
+    session.index = 0;
+  } else {
+    session.remaining = 300;
+  }
+  showScreen('practice');
+  document.getElementById('countDisplay').textContent = '0 reviewed';
+  document.getElementById('timerDisplay').textContent = type==='surprise' ? 'Surprise' : '5:00';
+  document.getElementById('feedback').innerHTML = '&nbsp;';
+  if(type==='practice'){
+    session.timerId = setInterval(tickTimer, 1000);
+  }
+  nextCard();
+}
+
+function tickTimer(){
+  session.remaining--;
+  var m = Math.floor(session.remaining/60), sec = session.remaining%60;
+  document.getElementById('timerDisplay').textContent = m+':'+String(sec).padStart(2,'0');
+  if(session.remaining<=0){
+    clearInterval(session.timerId);
+    endSession();
+  }
+}
+
+function nextCard(){
+  if(session.type==='surprise'){
+    if(session.index >= session.queue.length){ endSession(); return; }
+    session.current = session.queue[session.index];
+    session.index++;
+    document.getElementById('countDisplay').textContent = session.index+' / '+session.queue.length;
+  } else {
+    session.current = pickNextPracticeCard();
+    session.recentIds.push(session.current.id);
+    if(session.recentIds.length>4) session.recentIds.shift();
+    document.getElementById('countDisplay').textContent = session.reviewed+' reviewed';
+  }
+  session.locked = false;
+  document.getElementById('kanaDisplay').textContent = session.current.kana;
+  document.getElementById('feedback').innerHTML = '&nbsp;';
+
+  var options = pickDistractors(session.current, 3).concat([session.current]);
+  options.sort(function(){ return Math.random()-0.5; });
+
+  var wrap = document.getElementById('choicesWrap');
+  wrap.innerHTML = '';
+  options.forEach(function(opt, i){
+    var btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = '<span class="key-hint">'+(i+1)+'</span>'+opt.romaji;
+    btn.addEventListener('click', function(){ answer(opt, btn, wrap); });
+    wrap.appendChild(btn);
+  });
+}
+
+function answer(opt, btn, wrap){
+  if(session.locked) return;
+  session.locked = true;
+  var correct = opt.romaji === session.current.romaji;
+  var buttons = wrap.querySelectorAll('.choice-btn');
+  buttons.forEach(function(b){ b.disabled = true; });
+  if(correct){
+    btn.classList.add('correct');
+    document.getElementById('feedback').textContent = 'Correct — ' + session.current.kana + ' = ' + session.current.romaji;
+  } else {
+    btn.classList.add('wrong');
+    buttons.forEach(function(b){
+      if(b.textContent.replace(/^\d/,'') === session.current.romaji || b.innerHTML.indexOf('>'+session.current.romaji)>-1){}
+    });
+    // highlight the actually-correct button
+    buttons.forEach(function(b){
+      var label = b.textContent.replace(/^\d/,'');
+      if(label === session.current.romaji) b.classList.add('correct');
+    });
+    document.getElementById('feedback').textContent = session.current.kana + ' = ' + session.current.romaji;
+    var m = session.missed[session.current.id] || {kana:session.current.kana, romaji:session.current.romaji, misses:0};
+    m.misses++;
+    session.missed[session.current.id] = m;
+  }
+  setStat(session.current.id, correct);
+  session.reviewed++;
+  if(correct) session.correct++;
+  saveData();
+
+  var delay = correct ? 550 : 1100;
+  setTimeout(function(){
+    if(session.type==='practice' && session.remaining<=0) return;
+    nextCard();
+  }, delay);
+}
+
+function endSession(){
+  if(session.timerId) clearInterval(session.timerId);
+  bumpStreak();
+
+  var pct = session.reviewed ? Math.round(100*session.correct/session.reviewed) : 0;
+  document.getElementById('summaryPct').textContent = pct+'%';
+  document.getElementById('summarySub').textContent = session.correct+' of '+session.reviewed+' correct';
+
+  var deltaWrap = document.getElementById('summaryDeltaWrap');
+  if(session.type==='surprise'){
+    var hist = DATA.surprise.history;
+    var prev = hist.length ? hist[hist.length-1] : null;
+    DATA.surprise.history.push({date:todayStr(), pct:pct, total:session.reviewed, correct:session.correct});
+    if(DATA.surprise.history.length>20) DATA.surprise.history.shift();
+    DATA.surprise.lastDate = todayStr();
+    DATA.surprise.nextDue = addDaysStr(todayStr(), randInt(SURPRISE_MIN_DAYS, SURPRISE_MAX_DAYS));
+    DATA.surprise.postponedToday = false;
+    if(prev){
+      var d = pct - prev.pct;
+      deltaWrap.classList.remove('hidden');
+      document.getElementById('summaryDelta').innerHTML =
+        (d>=0 ? '<span style="color:var(--box5)">▲ +'+d+'%</span>' : '<span style="color:var(--red)">▼ '+d+'%</span>') +
+        ' since last surprise test ('+prev.pct+'% on '+prev.date+')';
+    } else {
+      deltaWrap.classList.add('hidden');
+    }
+  } else {
+    deltaWrap.classList.add('hidden');
+  }
+  saveData();
+
+  var weakWrap = document.getElementById('summaryWeakWrap');
+  var weakEl = document.getElementById('summaryWeak');
+  var missedList = Object.keys(session.missed).map(function(id){ return session.missed[id]; })
+    .sort(function(a,b){ return b.misses-a.misses; }).slice(0,8);
+  if(missedList.length){
+    weakWrap.classList.remove('hidden');
+    weakEl.innerHTML = '';
+    missedList.forEach(function(m){
+      var chip = document.createElement('div');
+      chip.className = 'weak-chip';
+      chip.innerHTML = '<span class="k kana-font">'+m.kana+'</span><span>'+m.romaji+'</span>';
+      weakEl.appendChild(chip);
+    });
+  } else {
+    weakWrap.classList.add('hidden');
+  }
+
+  showScreen('summary');
+  session = null;
+}
+
+/* ---------------- Progress screen ---------------- */
+function boxColor(box){
+  if(box<0) return 'var(--unseen)';
+  return ['var(--box0)','var(--box1)','var(--box2)','var(--box3)','var(--box4)','var(--box5)'][box];
+}
+function renderProgress(){
+  var chars = enabledChars();
+  var hira = chars.filter(function(c){ return c.script==='hiragana'; });
+  var kata = chars.filter(function(c){ return c.script==='katakana'; });
+  function masteredCount(arr){ return arr.filter(function(c){ return getStat(c.id).box===5; }).length; }
+  document.getElementById('progHira').textContent = masteredCount(hira)+'/'+hira.length;
+  document.getElementById('progKata').textContent = masteredCount(kata)+'/'+kata.length;
+
+  var container = document.getElementById('progressGrids');
+  container.innerHTML = '';
+  [['Hiragana', hira],['Katakana', kata]].forEach(function(pair){
+    if(!pair[1].length) return;
+    var title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = pair[0];
+    container.appendChild(title);
+    var grid = document.createElement('div');
+    grid.className = 'kgrid';
+    pair[1].forEach(function(c){
+      var s = getStat(c.id);
+      var tile = document.createElement('div');
+      tile.className = 'ktile kana-font';
+      tile.style.background = boxColor(s.box);
+      tile.title = c.kana+' = '+c.romaji+(s.seen? ' · '+s.correct+'/'+s.seen : ' · not seen yet');
+      tile.innerHTML = '<span class="k">'+c.kana+'</span><span class="r">'+c.romaji+'</span>';
+      grid.appendChild(tile);
+    });
+    container.appendChild(grid);
+  });
+
+  var histWrap = document.getElementById('surpriseHistoryWrap');
+  var hist = DATA.surprise.history.slice().reverse();
+  if(!hist.length){
+    histWrap.innerHTML = '<div class="hint">No surprise tests taken yet.</div>';
+  } else {
+    histWrap.innerHTML = '';
+    hist.slice(0,10).forEach(function(h, i){
+      var next = hist[i+1];
+      var row = document.createElement('div');
+      row.className = 'history-row';
+      var deltaHtml = '';
+      if(next){
+        var d = h.pct - next.pct;
+        deltaHtml = '<span class="delta '+(d>=0?'up':'down')+'">'+(d>=0?'▲+':'▼')+d+'%</span>';
+      }
+      row.innerHTML = '<span>'+h.date+'</span><span class="mono">'+h.correct+'/'+h.total+'</span><span class="mono">'+h.pct+'%</span>'+deltaHtml;
+      histWrap.appendChild(row);
+    });
+  }
+}
+
+/* ---------------- Settings screen ---------------- */
+function renderSettings(){
+  document.getElementById('cfgHiragana').checked = DATA.settings.hiragana;
+  document.getElementById('cfgKatakana').checked = DATA.settings.katakana;
+  document.getElementById('cfgBasic').checked = DATA.settings.basic;
+  document.getElementById('cfgDakuten').checked = DATA.settings.dakuten;
+  document.getElementById('cfgYoon').checked = DATA.settings.yoon;
+}
+function bindSetting(id, key, group){
+  document.getElementById(id).addEventListener('change', function(e){
+    var val = e.target.checked;
+    var testSettings = Object.assign({}, DATA.settings);
+    testSettings[key] = val;
+    var scriptKeys = ['hiragana','katakana'], groupKeys = ['basic','dakuten','yoon'];
+    var relevantKeys = group==='script' ? scriptKeys : groupKeys;
+    var anyOn = relevantKeys.some(function(k){ return testSettings[k]; });
+    if(!anyOn){
+      e.target.checked = true; // prevent disabling the last one in its group
+      toast('At least one must stay enabled.');
+      return;
+    }
+    DATA.settings[key] = val;
+    saveData();
+  });
+}
+
+/* ---------------- Export / Import / Reset ---------------- */
+function exportData(){
+  var blob = new Blob([JSON.stringify(DATA, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'kana-dojo-progress-'+todayStr()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Progress exported.');
+}
+function importData(file){
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var parsed = JSON.parse(reader.result);
+      if(!parsed || typeof parsed!=='object' || !parsed.stats) throw new Error('bad file');
+      DATA = Object.assign(defaultData(), parsed);
+      saveData();
+      showScreen('home');
+      toast('Progress imported.');
+    }catch(e){
+      toast('Could not read that file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- Wire up ---------------- */
+function init(){
+  DATA = loadData();
+  ensureSurpriseSchedule();
+
+  document.getElementById('startPracticeBtn').addEventListener('click', function(){ startSession('practice'); });
+  document.getElementById('takeSurpriseBtn').addEventListener('click', function(){
+    if(seenCount() < SURPRISE_MIN_SEEN){
+      toast('Practice a bit more first — learn at least '+SURPRISE_MIN_SEEN+' characters.');
+      return;
+    }
+    startSession('surprise');
+  });
+  document.getElementById('surpriseStartBtn').addEventListener('click', function(){ startSession('surprise'); });
+  document.getElementById('surpriseLaterBtn').addEventListener('click', function(){
+    DATA.surprise.postponedToday = true;
+    saveData();
+    document.getElementById('surpriseBanner').classList.add('hidden');
+    toast('Reminding you tomorrow.');
+  });
+  document.getElementById('endSessionBtn').addEventListener('click', function(){ endSession(); });
+  document.getElementById('summaryHomeBtn').addEventListener('click', function(){ showScreen('home'); });
+
+  document.getElementById('viewProgressBtn').addEventListener('click', function(){ showScreen('progress'); });
+  document.getElementById('progressBackBtn').addEventListener('click', function(){ showScreen('home'); });
+
+  document.getElementById('settingsBtn').addEventListener('click', function(){ showScreen('settings'); });
+  document.getElementById('settingsBackBtn').addEventListener('click', function(){ showScreen('home'); });
+
+  bindSetting('cfgHiragana','hiragana','script');
+  bindSetting('cfgKatakana','katakana','script');
+  bindSetting('cfgBasic','basic','group');
+  bindSetting('cfgDakuten','dakuten','group');
+  bindSetting('cfgYoon','yoon','group');
+
+  document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importBtn').addEventListener('click', function(){ document.getElementById('importFile').click(); });
+  document.getElementById('importFile').addEventListener('change', function(e){
+    if(e.target.files[0]) importData(e.target.files[0]);
+    e.target.value = '';
+  });
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    if(confirm('This will erase all practice progress and history. Continue?')){
+      DATA = defaultData();
+      ensureSurpriseSchedule();
+      saveData();
+      showScreen('home');
+      toast('Progress reset.');
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(document.getElementById('screen-practice').classList.contains('hidden')) return;
+    var n = parseInt(e.key,10);
+    if(n>=1 && n<=4){
+      var btns = document.querySelectorAll('#choicesWrap .choice-btn');
+      if(btns[n-1] && !btns[n-1].disabled) btns[n-1].click();
+    }
+  });
+
+  showScreen('home');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
