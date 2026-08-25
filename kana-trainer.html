@@ -3,63 +3,117 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Kana Dojo — Hiragana &amp; Katakana Trainer</title>
+<title>Kana Dojo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F7F2E7;
-    --panel:#FFFDF8;
-    --ink:#211E1A;
-    --ink-soft:#6B6459;
-    --red:#B23A2E;
-    --red-soft:rgba(178,58,46,0.12);
-    --gold:#C9A15A;
-    --line:rgba(33,30,26,0.12);
-    --box0:#C0503F;
-    --box1:#D48A3E;
-    --box2:#D6B23E;
-    --box3:#9AB25C;
-    --box4:#5E9A6B;
-    --box5:#2F7D5C;
-    --unseen:#D9D2C3;
+    /* washi paper + sumi ink + hanko seal — light (default) */
+    --paper:#EFE7D3;
+    --paper-grain:rgba(35,32,26,0.035);
+    --panel:#FBF7EC;
+    --ink:#23201A;
+    --ink-soft:#726A5B;
+    --red:#AC3324;
+    --red-soft:rgba(172,51,36,0.12);
+    --gold:#A97A34;
+    --line:rgba(35,32,26,0.14);
+    --box0:#B23A2E;
+    --box1:#C97A34;
+    --box2:#C7A63C;
+    --box3:#8FA85C;
+    --box4:#4F8F63;
+    --box5:#2E6B4B;
+    --unseen:#DCD3BC;
+    --focus:#3A6FA8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1C1814;
+      --paper-grain:rgba(239,231,214,0.035);
+      --panel:#262019;
+      --ink:#EFE7D6;
+      --ink-soft:#A69C89;
+      --red:#E0654F;
+      --red-soft:rgba(224,101,79,0.16);
+      --gold:#D8A94F;
+      --line:rgba(239,231,214,0.14);
+      --box0:#D9503F;
+      --box1:#DE9852;
+      --box2:#DFC15C;
+      --box3:#A9C57C;
+      --box4:#66B384;
+      --box5:#4C9A72;
+      --unseen:#3A3327;
+      --focus:#7CADE0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1C1814;
+    --paper-grain:rgba(239,231,214,0.035);
+    --panel:#262019;
+    --ink:#EFE7D6;
+    --ink-soft:#A69C89;
+    --red:#E0654F;
+    --red-soft:rgba(224,101,79,0.16);
+    --gold:#D8A94F;
+    --line:rgba(239,231,214,0.14);
+    --box0:#D9503F;
+    --box1:#DE9852;
+    --box2:#DFC15C;
+    --box3:#A9C57C;
+    --box4:#66B384;
+    --box5:#4C9A72;
+    --unseen:#3A3327;
+    --focus:#7CADE0;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--paper);}
   body{
-    font-family:'Inter',sans-serif;
+    font-family:'Zen Kaku Gothic New',sans-serif;
     color:var(--ink);
     min-height:100vh;
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(var(--paper-grain) 1px, transparent 1px),
+      radial-gradient(var(--paper-grain) 1px, transparent 1px);
+    background-size:26px 26px;
+    background-position:0 0, 13px 13px;
     -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:24px;}
-  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  h1,h2,h3{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;margin:0;}
   .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
-  .kana-font{font-family:'Noto Sans JP',sans-serif;}
+  .kana-font{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;}
   button{font-family:inherit;cursor:pointer;}
   .hidden{display:none !important;}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
 
   /* topbar */
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 8px;}
   .brand{display:flex;align-items:center;gap:10px;}
   .brand-mark{
-    font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:20px;
-    width:36px;height:36px;border-radius:10px;background:var(--red);color:#fff;
+    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:19px;
+    width:36px;height:36px;border-radius:7px;background:var(--red);color:#fff;
     display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15);
   }
   .brand h1{font-size:19px;}
   .icon-btn{
-    width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
-    font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--ink);
+    width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;color:var(--ink);
   }
+  .icon-btn svg{width:17px;height:17px;}
+  .btn-icon{width:15px;height:15px;vertical-align:-2px;margin-right:6px;display:inline-block;}
 
   main{padding:12px 20px 20px;flex:1;}
   .screen{display:flex;flex-direction:column;gap:14px;}
 
   /* surprise banner */
   .surprise-banner{
-    margin:6px 20px 0;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--red),#8f2c22);
+    margin:6px 20px 0;padding:14px;border-radius:10px;background:linear-gradient(135deg,#AC3324,#7A2419);
     color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;
   }
   .surprise-banner strong{font-size:14px;}
@@ -68,72 +122,72 @@
   .surprise-banner-actions button{white-space:nowrap;}
 
   /* cards / buttons */
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;}
   .stat-row{display:flex;gap:10px;}
-  .stat-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;}
-  .stat-box .num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;}
+  .stat-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;}
+  .stat-box .num{font-family:'Zen Kaku Gothic New',sans-serif;font-size:24px;font-weight:700;}
   .stat-box .lbl{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
 
   .btn-primary{
-    width:100%;padding:14px;border:none;border-radius:12px;background:var(--red);
+    width:100%;padding:14px;border:none;border-radius:9px;background:var(--red);
     color:#fff;font-weight:700;font-size:15px;letter-spacing:.01em;
   }
-  .btn-primary.small{width:auto;padding:8px 14px;font-size:12px;border-radius:8px;}
+  .btn-primary.small{width:auto;padding:8px 14px;font-size:12px;border-radius:7px;}
   .btn-primary:disabled{opacity:.5;}
   .btn-ghost{
-    width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);
     color:var(--ink);font-size:14px;font-weight:600;
   }
-  .btn-ghost.small{width:auto;padding:7px 12px;font-size:12px;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4);}
+  .btn-ghost.small{width:auto;padding:7px 12px;font-size:12px;border-radius:7px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4);}
   .link-btn{background:none;border:none;color:var(--ink-soft);font-size:13px;text-decoration:underline;}
 
   .hint{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0;}
-  details.about{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  details.about{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
   details.about summary{font-weight:600;font-size:13.5px;cursor:pointer;}
   details.about p,details.about ul{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin:8px 0 0;padding-left:0;}
   details.about ul{padding-left:18px;}
 
   /* practice screen */
   .practice-top{display:flex;align-items:center;justify-content:space-between;}
-  .timer{font-size:16px;font-weight:600;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:10px;}
+  .timer{font-size:16px;font-weight:600;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:8px;}
   .progress-count{font-size:12px;color:var(--ink-soft);}
   .flashcard{
-    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
     min-height:180px;display:flex;align-items:center;justify-content:center;
     position:relative;overflow:hidden;
   }
   .kana-big{font-size:96px;font-weight:700;}
   .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .choice-btn{
-    padding:16px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);
+    padding:16px 8px;border-radius:9px;border:1.5px solid var(--line);background:var(--panel);
     font-size:16px;font-weight:600;color:var(--ink);position:relative;
   }
   .choice-btn .key-hint{position:absolute;top:6px;left:8px;font-size:10px;color:var(--ink-soft);font-weight:500;}
-  .choice-btn.correct{background:rgba(47,125,92,0.15);border-color:var(--box4);color:var(--box5);}
-  .choice-btn.wrong{background:rgba(178,58,46,0.12);border-color:var(--red);color:var(--red);}
+  .choice-btn.correct{background:color-mix(in srgb, var(--box5) 18%, transparent);border-color:var(--box4);color:var(--box5);}
+  .choice-btn.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red);}
   .choice-btn:disabled{opacity:.85;}
   .feedback{text-align:center;font-size:13px;color:var(--ink-soft);min-height:18px;}
 
   /* summary */
   .summary-hero{text-align:center;padding:10px 0;}
-  .summary-hero .pct{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:700;color:var(--red);}
+  .summary-hero .pct{font-family:'Zen Kaku Gothic New',sans-serif;font-size:44px;font-weight:700;color:var(--red);}
   .summary-hero .sub{font-size:13px;color:var(--ink-soft);margin-top:2px;}
   .weak-list{display:flex;flex-wrap:wrap;gap:8px;}
   .weak-chip{
-    display:flex;align-items:center;gap:6px;background:var(--red-soft);border:1px solid rgba(178,58,46,.25);
-    border-radius:10px;padding:6px 10px;font-size:13px;
+    display:flex;align-items:center;gap:6px;background:var(--red-soft);border:1px solid color-mix(in srgb, var(--red) 25%, transparent);
+    border-radius:8px;padding:6px 10px;font-size:13px;
   }
-  .weak-chip .k{font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:16px;}
+  .weak-chip .k{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:16px;}
 
   /* progress grid */
   .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:4px 0 -4px;}
   .kgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
   .ktile{
-    aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    color:#fff;font-family:'Noto Sans JP',sans-serif;
+    aspect-ratio:1;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#fff;font-family:'Zen Kaku Gothic New',sans-serif;
   }
   .ktile .k{font-size:15px;font-weight:700;line-height:1;}
-  .ktile .r{font-size:8px;opacity:.85;margin-top:2px;font-family:'Inter',sans-serif;}
+  .ktile .r{font-size:8px;opacity:.85;margin-top:2px;font-family:'IBM Plex Mono',monospace;}
   .legend{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);align-items:center;}
   .legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:3px;vertical-align:-1px;}
   .history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
@@ -142,7 +196,7 @@
   .history-row .delta.down{color:var(--red);}
 
   /* settings */
-  .setting-group{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .setting-group{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
   .setting-group h3{font-size:13px;margin-bottom:10px;}
   .checkline{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px;}
   .checkline .desc{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
@@ -152,14 +206,14 @@
   .switch .track:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
   .switch input:checked + .track{background:var(--red);}
   .switch input:checked + .track:before{transform:translateX(18px);}
-  .danger-btn{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(178,58,46,.35);background:rgba(178,58,46,.06);color:var(--red);font-weight:600;font-size:13px;}
+  .danger-btn{width:100%;padding:11px;border-radius:8px;border:1px solid color-mix(in srgb, var(--red) 35%, transparent);background:var(--red-soft);color:var(--red);font-weight:600;font-size:13px;}
   .row-2{display:flex;gap:10px;}
   .row-2 > *{flex:1;}
   input[type=file]{font-size:12px;}
 
   .toast{
-    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;
-    padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#221E17;color:#F4EEE1;border:1px solid rgba(255,255,255,0.08);
+    padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
   }
   .toast.show{opacity:1;}
 </style>
@@ -171,12 +225,14 @@
       <span class="brand-mark">力</span>
       <h1>Kana Dojo</h1>
     </div>
-    <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.97 7.97 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a8 8 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a8 8 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a8 8 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5a.5.5 0 0 0 .6.2l2.5-1a8 8 0 0 0 1.7 1l.4 2.6a.5.5 0 0 0 .5.4h4a.5.5 0 0 0 .5-.4l.4-2.6a8 8 0 0 0 1.7-1l2.5 1a.5.5 0 0 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6z"/></svg>
+    </button>
   </div>
 
   <div id="surpriseBanner" class="surprise-banner hidden">
     <div>
-      <strong>🎴 Surprise Check-In</strong>
+      <strong><svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>Surprise Check-In</strong>
       <p>It's been a few days — see where your recall really stands.</p>
     </div>
     <div class="surprise-banner-actions">
@@ -194,10 +250,10 @@
         <div class="stat-box"><div class="num mono" id="statDue">0</div><div class="lbl">Due now</div></div>
       </div>
 
-      <button class="btn-primary" id="startPracticeBtn" style="padding:20px;font-size:17px;">▶ Start 5-Min Practice</button>
+      <button class="btn-primary" id="startPracticeBtn" style="padding:20px;font-size:17px;"><svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Start 5-Min Practice</button>
       <div class="row-2">
-        <button class="btn-ghost" id="viewProgressBtn">📊 Progress</button>
-        <button class="btn-ghost" id="takeSurpriseBtn">🎴 Surprise Test</button>
+        <button class="btn-ghost" id="viewProgressBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/></svg>Progress</button>
+        <button class="btn-ghost" id="takeSurpriseBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>Surprise Test</button>
       </div>
 
       <details class="about">
