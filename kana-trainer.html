@@ -761,6 +761,14 @@
     </div>
   </header>
 
+  <!-- iOS Safari mutes speechSynthesis under the physical silent switch, but treats real
+       <audio>/<video> playback as "media" audio that ignores it (the same reason YouTube
+       plays through silent mode). Playing this near-silent clip on the first tap primes
+       that audio session for the rest of the page, including speechSynthesis afterwards. -->
+  <audio id="audioUnlock" preload="auto" style="display:none">
+    <source src="data:audio/wav;base64,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" type="audio/wav">
+  </audio>
+
   <!-- MAIN CONTAINER -->
   <main>
 
@@ -1094,7 +1102,7 @@
   <!-- JAVASCRIPT LOGIC -->
   <script>
     /* VERSION — bump this on every change so a deployed update is visually confirmable */
-    const APP_VERSION = '1.0.0';
+    const APP_VERSION = '1.1.0';
     const APP_UPDATED = '2026-09-15';
     document.getElementById('versionTag').textContent = 'v' + APP_VERSION;
     document.getElementById('versionTag').title = 'Last updated ' + APP_UPDATED;
@@ -1278,6 +1286,30 @@
         startDrill('routine');
       }
     }
+
+    /* SILENT-SWITCH UNLOCK — plays a real <audio> element once, on the first tap
+       anywhere on the page, so iOS routes this tab's audio session as "media playback"
+       (which ignores the physical mute switch) instead of "ambient" (which doesn't).
+       speechSynthesis shares that same session once it's been set. */
+    (function setupSilentSwitchUnlock() {
+      let unlocked = false;
+      function unlock() {
+        if (unlocked) return;
+        unlocked = true;
+        const el = document.getElementById('audioUnlock');
+        if (el) {
+          el.volume = 0.2;
+          const p = el.play();
+          if (p && p.catch) p.catch(() => {}); // best-effort; nothing to do if the browser refuses
+        }
+        document.removeEventListener('pointerdown', unlock);
+        document.removeEventListener('touchstart', unlock);
+        document.removeEventListener('click', unlock);
+      }
+      document.addEventListener('pointerdown', unlock, { passive: true });
+      document.addEventListener('touchstart', unlock, { passive: true });
+      document.addEventListener('click', unlock);
+    })();
 
     /* AUDIO PRONUNCIATION VIA WEB SPEECH */
     let heldUtterance = null; // Chrome can garbage-collect a speaking utterance with no live reference, killing audio mid-word
