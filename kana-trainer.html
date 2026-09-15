@@ -1260,14 +1260,42 @@
     }
 
     /* AUDIO PRONUNCIATION VIA WEB SPEECH */
+    let heldUtterance = null; // Chrome can garbage-collect a speaking utterance with no live reference, killing audio mid-word
+    let japaneseVoice = null;
+
+    function pickJapaneseVoice() {
+      if (!window.speechSynthesis) return;
+      const voices = window.speechSynthesis.getVoices();
+      japaneseVoice = voices.find(v => v.lang === 'ja-JP') || voices.find(v => v.lang && v.lang.startsWith('ja')) || null;
+    }
+
+    if (window.speechSynthesis) {
+      pickJapaneseVoice();
+      // Voice lists load asynchronously on first page visit in most browsers
+      window.speechSynthesis.addEventListener('voiceschanged', pickJapaneseVoice);
+    } else {
+      document.querySelectorAll('.btn-audio-circle').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.35';
+        btn.title = 'Speech playback is not supported in this browser';
+      });
+    }
+
     function playAudio(kanaChar) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+      if (!window.speechSynthesis) return;
+
+      window.speechSynthesis.cancel();
+
+      // Calling speak() in the same tick as cancel() gets silently dropped in some
+      // Chrome builds; a short delay makes playback reliable.
+      setTimeout(() => {
         const utter = new SpeechSynthesisUtterance(kanaChar);
         utter.lang = 'ja-JP';
         utter.rate = 0.85;
+        if (japaneseVoice) utter.voice = japaneseVoice;
+        heldUtterance = utter;
         window.speechSynthesis.speak(utter);
-      }
+      }, 50);
     }
 
     function playCurrentKanaAudio() {
