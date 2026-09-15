@@ -590,6 +590,65 @@
       text-decoration: underline;
     }
 
+    .text-link {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* TEST HISTORY VIEW */
+    .history-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .history-item .hi-mode {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .history-item .hi-date {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .history-item .hi-score {
+      text-align: right;
+      flex: none;
+    }
+
+    .history-item .hi-pct {
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .history-item .hi-frac {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .history-empty {
+      background: var(--card-bg);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
     /* REPORT CARD VIEW */
     .report-card {
       background: var(--card-bg);
@@ -829,30 +888,43 @@
       <div class="stats-row">
         <div class="stat-box">
           <div class="stat-label">Accuracy</div>
-          <div id="statAccuracy" class="stat-val">76%</div>
-          <div class="stat-sub">Active reflex</div>
+          <div id="statAccuracy" class="stat-val">—</div>
+          <div id="statAccuracySub" class="stat-sub" style="color: var(--text-dim);">No drills yet</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Surprise Test</div>
-          <div class="stat-val" style="font-size: 16px; margin-top: 5px;">Active</div>
-          <div class="stat-sub" style="color: var(--text-dim);">Periodic blind audit</div>
+          <div id="statSurprise" class="stat-val" style="font-size: 16px; margin-top: 5px;">None yet</div>
+          <div id="statSurpriseSub" class="stat-sub" style="color: var(--text-dim);">Take one from below</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Mastered</div>
-          <div class="stat-val">54 <span style="font-size: 12px; color: var(--text-dim);">/ 92</span></div>
-          <div class="stat-sub">58% of all Kana</div>
+          <div id="statMastered" class="stat-val">0 <span style="font-size: 12px; color: var(--text-dim);">/ 92</span></div>
+          <div id="statMasteredSub" class="stat-sub" style="color: var(--text-dim);">0% of all Kana</div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">Flagged Pairs</div>
-          <div class="trap-tags">
-            <span class="trap-tag">シ/ツ</span>
-            <span class="trap-tag">ソ/ン</span>
-            <span class="trap-tag">ぬ/め</span>
-            <span class="trap-tag">ね/れ</span>
+          <div class="stat-label">Flagged Chars</div>
+          <div id="flaggedTags" class="trap-tags">
+            <span class="stat-sub" style="color: var(--text-dim);">None yet</span>
           </div>
         </div>
       </div>
 
+      <div style="text-align: center; margin-top: 2px;">
+        <button class="text-link" onclick="navigateTo('history')">View full test history →</button>
+      </div>
+
+    </div>
+
+    <!-- VIEW 5: TEST HISTORY -->
+    <div id="view-history" class="view">
+      <button class="btn-nav" onclick="navigateTo('dashboard')">← Back to Dashboard</button>
+
+      <div class="section-header" style="margin-top: 16px;">
+        <span class="section-title">Test History</span>
+      </div>
+      <div id="historySummary" style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px;"></div>
+
+      <div id="historyList"></div>
     </div>
 
     <!-- VIEW 2: ACTIVE DRILL / TEST -->
@@ -1095,7 +1167,7 @@
   <!-- JAVASCRIPT LOGIC -->
   <script>
     /* VERSION — bump this on every change so a deployed update is visually confirmable */
-    const APP_VERSION = '1.4.0';
+    const APP_VERSION = '1.5.0';
     const APP_UPDATED = '2026-09-15';
     document.getElementById('versionTag').textContent = 'v' + APP_VERSION;
     document.getElementById('versionTag').title = 'Last updated ' + APP_UPDATED;
@@ -1264,6 +1336,153 @@
     let timerIntervalId = null;
     let isTimerVisible = false; // Stealth mode by default
     let isCurrentSurpriseDrill = false;
+    let currentDrillMode = 'routine';
+
+    /* PERSISTENCE — test history + per-character stats, stored locally in this browser */
+    const STORAGE_KEY = 'kanaSenseiData_v1';
+    const TOTAL_KANA_COUNT = HIRAGANA_DATA.length + KATAKANA_DATA.length;
+
+    function loadAppData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { history: [], charStats: {} };
+        const parsed = JSON.parse(raw);
+        return { history: Array.isArray(parsed.history) ? parsed.history : [], charStats: parsed.charStats || {} };
+      } catch (e) {
+        return { history: [], charStats: {} };
+      }
+    }
+
+    function saveAppData() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
+    }
+
+    let appData = loadAppData();
+
+    function recordCharAnswer(q, isCorrect) {
+      const key = q.char; // hiragana and katakana tracked separately, even when pronunciation matches
+      const s = appData.charStats[key] || { romaji: q.romaji, seen: 0, correct: 0, lastCorrect: false };
+      s.seen++;
+      if (isCorrect) s.correct++;
+      s.lastCorrect = isCorrect;
+      appData.charStats[key] = s;
+    }
+
+    const DRILL_MODE_LABELS = {
+      routine: '5-Min Daily Sprint',
+      surprise: 'Surprise Benchmark',
+      hiragana: 'Hiragana Focus',
+      katakana: 'Katakana Focus',
+      traps: 'Confusable Traps'
+    };
+
+    function gradeColorForPercent(pct) {
+      if (pct >= 90) return '#10b981';
+      if (pct >= 75) return '#3b82f6';
+      if (pct >= 50) return '#f59e0b';
+      return '#f43f5e';
+    }
+
+    function formatRelativeDate(iso) {
+      const then = new Date(iso);
+      const days = Math.floor((Date.now() - then.getTime()) / 86400000);
+      if (days <= 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return days + ' days ago';
+      return then.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    /* STANDARD RADAR — computed from real history, not placeholders */
+    function computeStandardRadar() {
+      const entries = Object.entries(appData.charStats);
+      let totalSeen = 0, totalCorrect = 0;
+      entries.forEach(([, s]) => { totalSeen += s.seen; totalCorrect += s.correct; });
+      const accuracy = totalSeen > 0 ? Math.round(100 * totalCorrect / totalSeen) : 0;
+
+      const masteredCount = entries.filter(([, s]) =>
+        s.seen >= 2 && s.lastCorrect && (s.correct / s.seen) >= 0.7
+      ).length;
+
+      const flagged = entries
+        .map(([char, s]) => ({ char, romaji: s.romaji, misses: s.seen - s.correct }))
+        .filter(f => f.misses > 0)
+        .sort((a, b) => b.misses - a.misses)
+        .slice(0, 4);
+
+      const lastSurprise = [...appData.history].reverse().find(h => h.mode === 'surprise') || null;
+
+      return { accuracy, totalSeen, masteredCount, totalChars: TOTAL_KANA_COUNT, flagged, lastSurprise };
+    }
+
+    function updateStandardRadar() {
+      const r = computeStandardRadar();
+
+      document.getElementById('statAccuracy').innerText = r.totalSeen > 0 ? r.accuracy + '%' : '—';
+      document.getElementById('statAccuracySub').innerText = r.totalSeen > 0 ? `${r.totalSeen} answered` : 'No drills yet';
+
+      const surpriseValEl = document.getElementById('statSurprise');
+      const surpriseSubEl = document.getElementById('statSurpriseSub');
+      if (r.lastSurprise) {
+        surpriseValEl.innerText = r.lastSurprise.percent + '%';
+        surpriseSubEl.innerText = 'Last: ' + formatRelativeDate(r.lastSurprise.date);
+      } else {
+        surpriseValEl.innerText = 'None yet';
+        surpriseSubEl.innerText = 'Take one from below';
+      }
+
+      document.getElementById('statMastered').innerHTML =
+        `${r.masteredCount} <span style="font-size: 12px; color: var(--text-dim);">/ ${r.totalChars}</span>`;
+      document.getElementById('statMasteredSub').innerText =
+        r.totalChars > 0 ? Math.round(100 * r.masteredCount / r.totalChars) + '% of all Kana' : '';
+
+      const tagsWrap = document.getElementById('flaggedTags');
+      tagsWrap.innerHTML = '';
+      if (r.flagged.length === 0) {
+        tagsWrap.innerHTML = '<span class="stat-sub" style="color: var(--text-dim);">None yet</span>';
+      } else {
+        r.flagged.forEach(f => {
+          const tag = document.createElement('span');
+          tag.className = 'trap-tag';
+          tag.textContent = `${f.char} ${f.romaji}`;
+          tagsWrap.appendChild(tag);
+        });
+      }
+    }
+
+    /* TEST HISTORY VIEW */
+    function renderHistory() {
+      const listEl = document.getElementById('historyList');
+      const summaryEl = document.getElementById('historySummary');
+      const hist = appData.history.slice().reverse(); // most recent first
+
+      if (hist.length === 0) {
+        summaryEl.innerText = '';
+        listEl.innerHTML = '<div class="history-empty">No tests taken yet — start a practice session from the dashboard.</div>';
+        return;
+      }
+
+      summaryEl.innerText = `${hist.length} test${hist.length === 1 ? '' : 's'} recorded`;
+      listEl.innerHTML = '';
+      hist.forEach(h => {
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        const modeLabel = DRILL_MODE_LABELS[h.mode] || h.mode;
+        const dateStr = new Date(h.date).toLocaleString(undefined, {
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        });
+        row.innerHTML = `
+          <div>
+            <div class="hi-mode">${modeLabel}${h.mode === 'surprise' ? ' ⚡' : ''}</div>
+            <div class="hi-date">${dateStr}</div>
+          </div>
+          <div class="hi-score">
+            <div class="hi-pct" style="color: ${gradeColorForPercent(h.percent)};">${h.percent}%</div>
+            <div class="hi-frac">${h.correct} / ${h.total}</div>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    }
 
     /* VIEW NAVIGATION */
     function navigateTo(viewName) {
@@ -1273,6 +1492,9 @@
 
       document.getElementById('navDashboardBtn').classList.toggle('active', viewName === 'dashboard');
       document.getElementById('navTrapsBtn').classList.toggle('active', viewName === 'traps');
+
+      if (viewName === 'dashboard') updateStandardRadar();
+      if (viewName === 'history') renderHistory();
 
       window.scrollTo(0, 0);
     }
@@ -1466,6 +1688,7 @@
       missedKanaList = [];
       isAnswerLocked = false;
       isCurrentSurpriseDrill = (mode === 'surprise');
+      currentDrillMode = mode;
 
       timerDuration = generated.duration;
       timerRemaining = generated.duration;
@@ -1534,6 +1757,7 @@
       const q = activeDrillQuestions[currentQIndex];
       const chosenRomaji = q.options[chosenIdx];
       const isCorrect = (chosenRomaji === q.romaji);
+      recordCharAnswer(q, isCorrect);
 
       const chosenBtn = document.getElementById('opt' + chosenIdx);
 
@@ -1587,6 +1811,19 @@
 
       const total = activeDrillQuestions.length;
       const pct = total > 0 ? Math.round((currentScoreCount / total) * 100) : 0;
+
+      if (total > 0) {
+        appData.history.push({
+          date: new Date().toISOString(),
+          mode: currentDrillMode,
+          correct: currentScoreCount,
+          total: total,
+          percent: pct,
+          missed: missedKanaList.map(m => ({ char: m.char, romaji: m.romaji }))
+        });
+        if (appData.history.length > 200) appData.history.shift(); // cap growth
+        saveAppData();
+      }
 
       document.getElementById('reportTitle').innerText = isCurrentSurpriseDrill
         ? 'Surprise Benchmark Complete'
@@ -1651,6 +1888,7 @@
 
     // Initialize display state
     updateHeroDisplay();
+    updateStandardRadar();
   </script>
 </body>
 </html>
