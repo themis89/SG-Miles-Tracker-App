@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>KanaSensei - 5-Minute Retrieval Master</title>
+  <style>
+    /* RESET & CORE VARIABLES */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #0f0f12;
+      --card-bg: #18181c;
+      --card-subtle: #222228;
+      --border: #2e2e38;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --primary: #e11d48;
+      --primary-hover: #be123c;
+      --primary-light: rgba(225, 29, 72, 0.15);
+      --amber: #f59e0b;
+      --amber-light: rgba(245, 158, 11, 0.15);
+      --emerald: #10b981;
+      --emerald-light: rgba(16, 185, 129, 0.15);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* HEADER */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(15, 15, 18, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+
+    .header-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #e11d48, #f59e0b);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+    }
+
+    .brand-text h1 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: -2px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-nav {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-nav:hover, .btn-nav.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .day-toggle {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px dashed var(--amber);
+      color: var(--amber);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 16px 36px;
+    }
+
+    .view {
+      display: none;
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* INTERCHANGEABLE HERO CARD */
+    .hero-card {
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s;
+    }
+
+    .hero-routine {
+      background: linear-gradient(145deg, #1e1b2e 0%, #15141d 100%);
+      border: 1.5px solid #3b3554;
+    }
+
+    .hero-surprise {
+      background: linear-gradient(135deg, #be123c 0%, #831843 60%, #4c0519 100%);
+      border: 1.5px solid #fb7185;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .pill-routine {
+      background: rgba(255, 255, 255, 0.08);
+      color: #c4b5fd;
+      border: 1px solid rgba(196, 181, 253, 0.2);
+    }
+
+    .pill-surprise {
+      background: #ffffff;
+      color: #9f1239;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+
+    .hero-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 20px;
+      max-width: 520px;
+    }
+
+    .btn-hero {
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .btn-hero:active {
+      transform: scale(0.98);
+    }
+
+    .btn-hero-routine {
+      background: #ffffff;
+      color: #121214;
+      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-hero-surprise {
+      background: #facc15;
+      color: #713f12;
+      box-shadow: 0 4px 18px rgba(250, 204, 21, 0.4);
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+    }
+
+    /* COACHING NOTE */
+    .note-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--amber);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .note-card strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    /* SECTION TITLE */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+    }
+
+    /* EXTRA DRILL TILES */
+    .grid-extra {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 540px) {
+      .grid-extra {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .drill-tile {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .drill-tile:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .tile-glyph {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tile-glyph.hira { color: #f43f5e; }
+    .tile-glyph.kata { color: #f59e0b; }
+    .tile-glyph.trap { color: #a855f7; }
+
+    .tile-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--card-subtle);
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .tile-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .tile-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* STATS OVERVIEW */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (min-width: 540px) {
+      .stats-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .stat-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--emerald);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .trap-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .trap-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(225, 29, 72, 0.15);
+      color: #f43f5e;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    /* DRILL TEST VIEW */
+    .drill-header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .timer-pill {
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .timer-pill.urgent {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .drill-progress-bar {
+      width: 100%;
+      height: 5px;
+      background: var(--card-subtle);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .drill-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--amber));
+      transition: width 0.2s ease-out;
+    }
+
+    /* FLASHCARD BOX */
+    .flashcard {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 20px;
+      text-align: center;
+      position: relative;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-audio-circle {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .streak-banner {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--amber);
+      background: var(--amber-light);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .kana-display {
+      font-size: 96px;
+      font-weight: 900;
+      line-height: 1;
+      margin: 10px 0 16px;
+      user-select: none;
+      letter-spacing: -2px;
+    }
+
+    .kana-script-badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .instant-tip-box {
+      margin-top: 18px;
+      padding: 10px 14px;
+      background: var(--card-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-muted);
+      border-left: 3px solid var(--primary);
+      text-align: left;
+      display: none;
+    }
+
+    /* ANSWER OPTIONS GRID */
+    .answers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn-option {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-md);
+      padding: 18px 12px;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .btn-option:active {
+      transform: scale(0.97);
+    }
+
+    .btn-option.correct {
+      background: var(--emerald) !important;
+      border-color: var(--emerald) !important;
+      color: #fff !important;
+    }
+
+    .btn-option.wrong {
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: #fff !important;
+    }
+
+    .btn-option.disabled {
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    .btn-quit {
+      display: block;
+      margin: 0 auto;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* REPORT CARD VIEW */
+    .report-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px;
+      text-align: center;
+    }
+
+    .score-headline {
+      font-size: 58px;
+      font-weight: 900;
+      color: var(--primary);
+      margin: 12px 0 4px;
+      line-height: 1;
+    }
+
+    .assessment-box {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: left;
+      margin: 20px 0;
+    }
+
+    .assessment-grade {
+      font-size: 14px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .assessment-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .missed-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 14px 0 24px;
+      text-align: left;
+    }
+
+    .missed-item {
+      background: var(--primary-light);
+      border: 1px solid rgba(225, 29, 72, 0.3);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .missed-char {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .missed-romaji {
+      font-size: 12px;
+      font-weight: 800;
+      color: #f43f5e;
+    }
+
+    .btn-group-report {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 540px) {
+      .btn-group-report {
+        flex-direction: row;
+      }
+    }
+
+    /* TRAP BREAKER VIEW */
+    .trap-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .trap-group h3 {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .trap-group p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .trap-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 500px) {
+      .trap-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .trap-item {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .trap-char-big {
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .trap-details {
+      flex: 1;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .trap-details strong {
+      display: block;
+      color: var(--primary);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="brand" onclick="navigateTo('dashboard')">
+        <div class="logo-badge">仮</div>
+        <div class="brand-text">
+          <h1>KanaSensei</h1>
+          <span>5-Min Active Retrieval</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <!-- SIMULATOR TOGGLE: lets user test Routine Day vs Surprise Day -->
+        <button id="dayToggleBtn" class="day-toggle" onclick="toggleSimulatedDay()">
+          Routine Mode
+        </button>
+        <button id="navDashboardBtn" class="btn-nav active" onclick="navigateTo('dashboard')">
+          Drills
+        </button>
+        <button id="navTrapsBtn" class="btn-nav" onclick="navigateTo('traps')">
+          Traps
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main>
+
+    <!-- VIEW 1: DASHBOARD -->
+    <div id="view-dashboard" class="view active">
+
+      <!-- INTERCHANGEABLE HERO CARD -->
+      <div id="heroCard" class="hero-card hero-routine">
+        <div id="heroPill" class="hero-pill pill-routine">
+          ● Routine Conditioning
+        </div>
+        <h2 id="heroTitle" class="hero-title">
+          Today's 5-Minute Daily Sprint
+        </h2>
+        <p id="heroDesc" class="hero-desc">
+          High-velocity rapid retrieval. Answer in under 4 seconds to engrain muscle memory into your subconscious.
+        </p>
+        <button id="heroActionBtn" class="btn-hero btn-hero-routine" onclick="startPrimaryAction()">
+          ▶ Start Today's Practice (5 Mins)
+        </button>
+      </div>
+
+      <!-- SENSEI COACHING CALLOUT -->
+      <div class="note-card">
+        <strong>Sensei's Note: How you overcome the 2-Year Plateau</strong>
+        Staring at static kana charts creates passive recognition, not active recall. By doing one rapid 5-minute timed sprint daily and facing periodic, unannounced surprise tests, your brain automates glyph-to-sound recognition within 14 days.
+      </div>
+
+      <!-- EXTRA OPTIONAL DRILLS (BELOW HERO) -->
+      <div class="section-header">
+        <span class="section-title">Extra Drills (Optional)</span>
+      </div>
+
+      <div class="grid-extra">
+        <div class="drill-tile" onclick="startDrill('hiragana')">
+          <div class="tile-glyph hira">
+            あ <span>›</span>
+          </div>
+          <div class="tile-title">Hiragana Focus</div>
+          <div class="tile-desc">Native curved alphabet. 46 base characters only.</div>
+        </div>
+
+        <div class="drill-tile" onclick="startDrill('katakana')">
+          <div class="tile-glyph kata">
+            ア <span>›</span>
+          </div>
+          <div class="tile-title">Katakana Focus</div>
+          <div class="tile-desc">Angular loanword alphabet. Tackle the tricky glyphs.</div>
+        </div>
+
+        <div class="drill-tile" onclick="startDrill('traps')">
+          <div class="tile-glyph trap">
+            ツ/シ <span>›</span>
+          </div>
+          <div class="tile-title">Confusable Traps</div>
+          <div class="tile-desc">Fast-track drill on lookalike pairs (シ/ツ, ぬ/め, etc).</div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE RADAR -->
+      <div class="section-header">
+        <span class="section-title">Standard Radar</span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-label">Accuracy</div>
+          <div id="statAccuracy" class="stat-val">76%</div>
+          <div class="stat-sub">Active reflex</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Surprise Test</div>
+          <div class="stat-val" style="font-size: 16px; margin-top: 5px;">Active</div>
+          <div class="stat-sub" style="color: var(--text-dim);">Periodic blind audit</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Mastered</div>
+          <div class="stat-val">54 <span style="font-size: 12px; color: var(--text-dim);">/ 92</span></div>
+          <div class="stat-sub">58% of all Kana</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Flagged Pairs</div>
+          <div class="trap-tags">
+            <span class="trap-tag">シ/ツ</span>
+            <span class="trap-tag">ソ/ン</span>
+            <span class="trap-tag">ぬ/め</span>
+            <span class="trap-tag">ね/れ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIEW 2: ACTIVE DRILL / TEST -->
+    <div id="view-drill" class="view">
+
+      <!-- TOP STATUS BAR WITH STEALTH TIMER -->
+      <div class="drill-header">
+        <!-- Stealth Timer: hidden by default so surprise tests stay stress-free -->
+        <div id="timerPill" class="timer-pill" onclick="toggleTimerVisibility()">
+          <span id="timerEyeIcon">👁️</span>
+          <span id="timerText">Timer: Hidden</span>
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-dim);">
+          Kana <span id="currentKanaIndex" style="color: var(--text);">1</span>/<span id="totalKanaCount">35</span>
+        </div>
+        <div style="font-size: 12px; font-weight: 800; color: var(--emerald);">
+          Score: <span id="currentScore">0</span>
+        </div>
+      </div>
+
+      <!-- PROGRESS LINE -->
+      <div class="drill-progress-bar">
+        <div id="drillProgressFill" class="drill-progress-fill"></div>
+      </div>
+
+      <!-- FLASHCARD GLYPH DISPLAY -->
+      <div class="flashcard">
+        <button class="btn-audio-circle" onclick="playCurrentKanaAudio()" title="Pronounce kana">
+          🔊
+        </button>
+
+        <div id="streakBadge" class="streak-banner" style="display: none;">
+          🔥 3 In a Row! Reflex dialed in.
+        </div>
+
+        <div id="displayKanaGlyph" class="kana-display">あ</div>
+        <div id="displayKanaScript" class="kana-script-badge">HIRAGANA</div>
+
+        <!-- RECALL TIP (Shows right after answer) -->
+        <div id="tipBox" class="instant-tip-box">
+          <span id="tipText">Mnemonic: Apple stem</span>
+        </div>
+      </div>
+
+      <!-- 4-CHOICE OPTIONS -->
+      <div class="answers-grid">
+        <button id="opt0" class="btn-option" onclick="selectAnswer(0)">a</button>
+        <button id="opt1" class="btn-option" onclick="selectAnswer(1)">ka</button>
+        <button id="opt2" class="btn-option" onclick="selectAnswer(2)">sa</button>
+        <button id="opt3" class="btn-option" onclick="selectAnswer(3)">ta</button>
+      </div>
+
+      <button class="btn-quit" onclick="finishDrill()">
+        Quit drill & view score
+      </button>
+
+    </div>
+
+    <!-- VIEW 3: REPORT CARD -->
+    <div id="view-report" class="view">
+      <div class="report-card">
+        <div style="font-size: 36px; margin-bottom: 4px;">🏆</div>
+        <h2 id="reportTitle" style="font-size: 22px; font-weight: 900;">Session Complete</h2>
+
+        <div id="reportScoreVal" class="score-headline">0 / 0</div>
+        <div id="reportAccuracyVal" style="font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">
+          Accuracy: 0%
+        </div>
+
+        <!-- SENSEI EVALUATION -->
+        <div class="assessment-box">
+          <div class="assessment-grade">
+            <span>Sensei Evaluation</span>
+            <span id="reportGrade" style="color: var(--primary);">Grade S</span>
+          </div>
+          <div id="reportAdvice" class="assessment-desc">
+            Strong reflex! Your retrieval response is solid.
+          </div>
+        </div>
+
+        <!-- MISSED CHARACTERS FOR SPACED REPETITION -->
+        <div id="missedSection" style="display: none;">
+          <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); text-align: left; margin-bottom: 6px;">
+            Flagged For Spaced Repetition:
+          </div>
+          <div id="missedContainer" class="missed-list"></div>
+        </div>
+
+        <div class="btn-group-report">
+          <button class="btn-hero btn-hero-routine" style="flex: 1;" onclick="startDrill('routine')">
+            ↻ Another 5-Min Sprint
+          </button>
+          <button class="btn-nav" style="padding: 14px; flex: 1;" onclick="navigateTo('dashboard')">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: LOOKALIKE TRAP BREAKER -->
+    <div id="view-traps" class="view">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 4px;">Lookalike Trap Breaker</h2>
+        <p style="font-size: 12.5px; color: var(--text-muted);">
+          90% of students who still struggle after 2 years get tricked by these identical shapes. Here is the anatomical rule for each:
+        </p>
+      </div>
+
+      <!-- TRAP 1: KATAKANA QUAD -->
+      <div class="trap-group">
+        <h3>1. The Katakana Quad (シ vs ツ vs ソ vs ン)</h3>
+        <p>Distinguish by the angle and origin stroke direction!</p>
+        <div class="trap-grid">
+          <div class="trap-item">
+            <div class="trap-char-big">シ</div>
+            <div class="trap-details">
+              <strong>[shi] - Horizontal eyes</strong>
+              Dashes lie horizontally. The big stroke sweeps from <em>bottom-left up to the right</em> (looking up).
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">ツ</div>
+            <div class="trap-details">
+              <strong>[tsu] - Vertical drops</strong>
+              Dashes stand upright. The big stroke slashes <em>top-right down to the left</em> (droplets falling).
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">ン</div>
+            <div class="trap-details">
+              <strong>[n] - Sweeping up</strong>
+              Single flat dash. The long stroke rises gently from the <em>bottom upward</em>.
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">ソ</div>
+            <div class="trap-details">
+              <strong>[so] - Slashing down</strong>
+              Single vertical dash. The long stroke chops <em>from the top downwards</em>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAP 2: SA vs CHI -->
+      <div class="trap-group">
+        <h3>2. Directional Loops (さ vs ち)</h3>
+        <p>Hiragana mirrored orientation.</p>
+        <div class="trap-grid">
+          <div class="trap-item">
+            <div class="trap-char-big">さ</div>
+            <div class="trap-details">
+              <strong>[sa] - Loop to the RIGHT</strong>
+              Curved belly opens towards the right hand side.
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">ち</div>
+            <div class="trap-details">
+              <strong>[chi] - Loop to the LEFT</strong>
+              Looks like a number "5". Main belly sweeps to the left.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAP 3: NU vs ME vs RU vs RO -->
+      <div class="trap-group">
+        <h3>3. Tail Loops (ぬ vs め) & (る vs ろ)</h3>
+        <p>Check whether the ending stroke closes into a ruby/noodle loop!</p>
+        <div class="trap-grid">
+          <div class="trap-item">
+            <div class="trap-char-big">ぬ</div>
+            <div class="trap-details">
+              <strong>[nu] - Has a loop tail</strong>
+              Twirled chopsticks holding a noodle loop at the very tip.
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">め</div>
+            <div class="trap-details">
+              <strong>[me] - No loop tail</strong>
+              Smooth tail slash. You dropped the noodle!
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">る</div>
+            <div class="trap-details">
+              <strong>[ru] - Ruby loop</strong>
+              Curled loop at the bottom holding a ruby.
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">ろ</div>
+            <div class="trap-details">
+              <strong>[ro] - Open mouth</strong>
+              Empty bottom. A robber stole the ruby!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAP 4: NE vs RE vs WA -->
+      <div class="trap-group">
+        <h3>4. The Triple Threat (ね vs れ vs わ)</h3>
+        <p>Identical left backbone. Focus exclusively on the right foot.</p>
+        <div class="trap-grid">
+          <div class="trap-item">
+            <div class="trap-char-big">ね</div>
+            <div class="trap-details">
+              <strong>[ne] - Cat tail loop</strong>
+              Tied in a knot or curled like a sleepy cat's tail (Neko).
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">れ</div>
+            <div class="trap-details">
+              <strong>[re] - Sharp kick</strong>
+              Kicks sharply out to the right like a resting soccer player.
+            </div>
+          </div>
+          <div class="trap-item">
+            <div class="trap-char-big">わ</div>
+            <div class="trap-details">
+              <strong>[wa] - Smooth inward curve</strong>
+              Round wasp belly curling inward without loops.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-hero btn-hero-routine" onclick="startDrill('traps')">
+        ▶ Test Lookalike Traps Now
+      </button>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* DATASETS */
+    const HIRAGANA_DATA = [
+      { char: 'あ', romaji: 'a', tip: 'Looks like an Apple with a stem' },
+      { char: 'い', romaji: 'i', tip: 'Two needles side-by-side' },
+      { char: 'う', romaji: 'u', tip: 'Punched in the stomach saying "Ugh!"' },
+      { char: 'え', romaji: 'e', tip: 'Energetic ninja running' },
+      { char: 'お', romaji: 'o', tip: 'Golf ball On the green' },
+      { char: 'か', romaji: 'ka', tip: 'A kite flying in wind' },
+      { char: 'き', romaji: 'ki', tip: 'Key with two crossbars' },
+      { char: 'く', romaji: 'ku', tip: 'Cuckoo bird beak' },
+      { char: 'け', romaji: 'ke', tip: 'Keg of beer sitting upright' },
+      { char: 'こ', romaji: 'ko', tip: 'Two Koi fish swimming' },
+      { char: 'さ', romaji: 'sa', tip: 'Curve points RIGHT (unlike ち)' },
+      { char: 'し', romaji: 'shi', tip: 'She has long hair / fishhook' },
+      { char: 'す', romaji: 'su', tip: 'Spiral swing' },
+      { char: 'せ', romaji: 'se', tip: 'Seven people standing' },
+      { char: 'そ', romaji: 'so', tip: 'Zig-zag sewing stitch' },
+      { char: 'た', romaji: 'ta', tip: 'Spells the letters "ta"' },
+      { char: 'ち', romaji: 'chi', tip: 'Curve points LEFT (unlike さ)' },
+      { char: 'つ', romaji: 'tsu', tip: 'Tidal wave Tsunami' },
+      { char: 'て', romaji: 'te', tip: 'Dog’s wagging Tail' },
+      { char: 'と', romaji: 'to', tip: 'Thorn in a Toe' },
+      { char: 'な', romaji: 'na', tip: 'Nun praying at a cross' },
+      { char: 'に', romaji: 'ni', tip: 'Needle and thread' },
+      { char: 'ぬ', romaji: 'nu', tip: 'Swirl noodle loop at the tail!' },
+      { char: 'ね', romaji: 'ne', tip: 'Curled tail like a sleepy cat' },
+      { char: 'の', romaji: 'no', tip: 'Forbidden NO sign' },
+      { char: 'は', romaji: 'ha', tip: 'Open top (no hat like ほ)' },
+      { char: 'ひ', romaji: 'hi', tip: 'Smiling mouth going "He-he"' },
+      { char: 'ふ', romaji: 'fu', tip: 'Mount Fuji' },
+      { char: 'へ', romaji: 'he', tip: 'A hill you Hike up' },
+      { char: 'ほ', romaji: 'ho', tip: 'Has a roof Hat (unlike は)' },
+      { char: 'ま', romaji: 'ma', tip: 'Mast of a boat with 2 bars' },
+      { char: 'み', romaji: 'mi', tip: 'Musical notes "mi-mi"' },
+      { char: 'む', romaji: 'mu', tip: 'Mooing cow head' },
+      { char: 'め', romaji: 'me', tip: 'NO tail loop (unlike ぬ) - dropped noodles' },
+      { char: 'も', romaji: 'mo', tip: 'More worms on a hook' },
+      { char: 'や', romaji: 'ya', tip: 'Yak horns' },
+      { char: 'ゆ', romaji: 'yu', tip: 'A unique fish' },
+      { char: 'よ', romaji: 'yo', tip: 'Toy yo-yo dangling' },
+      { char: 'ら', romaji: 'ra', tip: 'Rabbit sitting up' },
+      { char: 'り', romaji: 'ri', tip: 'Right stroke is longer River' },
+      { char: 'る', romaji: 'ru', tip: 'Has a Ruby loop at the bottom' },
+      { char: 'れ', romaji: 're', tip: 'Kicks OUTWARD like a runner' },
+      { char: 'ろ', romaji: 'ro', tip: 'Open bottom. Robber took the ruby' },
+      { char: 'わ', romaji: 'wa', tip: 'Smooth round wasp shape' },
+      { char: 'を', romaji: 'wo', tip: 'Whoa! Guy jumping hurdles' },
+      { char: 'ん', romaji: 'n', tip: 'Looks like cursive letter "n"' }
+    ];
+
+    const KATAKANA_DATA = [
+      { char: 'ア', romaji: 'a', tip: 'Axe head' },
+      { char: 'イ', romaji: 'i', tip: 'Iron easel' },
+      { char: 'ウ', romaji: 'u', tip: 'Wearing a cap (unlike ワ)' },
+      { char: 'エ', romaji: 'e', tip: 'Elevator girder frame' },
+      { char: 'オ', romaji: 'o', tip: 'Opera singer with arm extended' },
+      { char: 'カ', romaji: 'ka', tip: 'Sharp edge, like Hiragana か' },
+      { char: 'キ', romaji: 'ki', tip: 'Key top' },
+      { char: 'ク', romaji: 'ku', tip: 'Cook chef hat' },
+      { char: 'ケ', romaji: 'ke', tip: 'Kettle handle' },
+      { char: 'コ', romaji: 'ko', tip: 'Corner shape' },
+      { char: 'サ', romaji: 'sa', tip: 'Three Sardines' },
+      { char: 'シ', romaji: 'shi', tip: 'Dashes horizontal; stroke sweeps BOTTOM-UP' },
+      { char: 'ス', romaji: 'su', tip: 'Suit hanger' },
+      { char: 'セ', romaji: 'se', tip: 'Same as Hiragana せ' },
+      { char: 'ソ', romaji: 'so', tip: 'Single dash upright; stroke chops TOP-DOWN' },
+      { char: 'タ', romaji: 'ta', tip: 'A flying kite' },
+      { char: 'チ', romaji: 'chi', tip: 'Cheerleader with pom-poms' },
+      { char: 'ツ', romaji: 'tsu', tip: 'Dashes vertical; stroke slashes TOP-DOWN' },
+      { char: 'テ', romaji: 'te', tip: 'TV antenna' },
+      { char: 'ト', romaji: 'to', tip: 'Totem pole' },
+      { char: 'ナ', romaji: 'na', tip: 'Nutcracker' },
+      { char: 'ニ', romaji: 'ni', tip: 'Two needles = 2 lines' },
+      { char: 'ヌ', romaji: 'nu', tip: 'Chopsticks crossing' },
+      { char: 'ネ', romaji: 'ne', tip: 'Necktie' },
+      { char: 'ノ', romaji: 'no', tip: 'Single diagonal slash' },
+      { char: 'ハ', romaji: 'ha', tip: 'Hut roof' },
+      { char: 'ヒ', romaji: 'hi', tip: 'Heel of a shoe' },
+      { char: 'フ', romaji: 'fu', tip: 'Fuji cliff peak' },
+      { char: 'ヘ', romaji: 'he', tip: 'Identical to Hiragana へ' },
+      { char: 'ホ', romaji: 'ho', tip: 'Holy cross' },
+      { char: 'マ', romaji: 'ma', tip: 'Martini glass' },
+      { char: 'ミ', romaji: 'mi', tip: 'Three Missile tracks' },
+      { char: 'ム', romaji: 'mu', tip: 'Moose snout triangle' },
+      { char: 'メ', romaji: 'me', tip: 'An "X" marking a Medal' },
+      { char: 'モ', romaji: 'mo', tip: 'Sharp version of も' },
+      { char: 'ヤ', romaji: 'ya', tip: 'Yak horn' },
+      { char: 'ユ', romaji: 'yu', tip: 'U-turn shape' },
+      { char: 'ヨ', romaji: 'yo', tip: 'Toy shelf' },
+      { char: 'ラ', romaji: 'ra', tip: 'Ramen spoon' },
+      { char: 'リ', romaji: 'ri', tip: 'Ribbon streamers' },
+      { char: 'ル', romaji: 'ru', tip: 'Two legs running' },
+      { char: 'レ', romaji: 're', tip: 'Red checkmark' },
+      { char: 'ロ', romaji: 'ro', tip: 'Closed square Road' },
+      { char: 'ワ', romaji: 'wa', tip: 'Wine glass, no antenna top' },
+      { char: 'ヲ', romaji: 'wo', tip: 'Olympic runner' },
+      { char: 'ン', romaji: 'n', tip: 'Flat single dash; stroke rises gently UPWARD' }
+    ];
+
+    /* APPLICATION STATE */
+    let isSurpriseDay = false; // toggleable state
+    let activeDrillQuestions = [];
+    let currentQIndex = 0;
+    let currentScoreCount = 0;
+    let currentStreakCount = 0;
+    let missedKanaList = [];
+    let isAnswerLocked = false;
+    let timerDuration = 300;
+    let timerRemaining = 300;
+    let timerIntervalId = null;
+    let isTimerVisible = false; // Stealth mode by default
+    let isCurrentSurpriseDrill = false;
+
+    /* VIEW NAVIGATION */
+    function navigateTo(viewName) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      const target = document.getElementById('view-' + viewName);
+      if (target) target.classList.add('active');
+
+      document.getElementById('navDashboardBtn').classList.toggle('active', viewName === 'dashboard');
+      document.getElementById('navTrapsBtn').classList.toggle('active', viewName === 'traps');
+
+      window.scrollTo(0, 0);
+    }
+
+    /* INTERCHANGEABLE HERO SYSTEM */
+    function updateHeroDisplay() {
+      const heroCard = document.getElementById('heroCard');
+      const heroPill = document.getElementById('heroPill');
+      const heroTitle = document.getElementById('heroTitle');
+      const heroDesc = document.getElementById('heroDesc');
+      const heroActionBtn = document.getElementById('heroActionBtn');
+      const dayToggleBtn = document.getElementById('dayToggleBtn');
+
+      if (isSurpriseDay) {
+        dayToggleBtn.innerText = 'Surprise Day';
+        dayToggleBtn.style.background = 'rgba(225, 29, 72, 0.2)';
+        dayToggleBtn.style.color = '#f43f5e';
+        dayToggleBtn.style.borderColor = '#f43f5e';
+
+        heroCard.className = 'hero-card hero-surprise';
+        heroPill.className = 'hero-pill pill-surprise';
+        heroPill.innerText = '⚡ Pop Assessment Triggered';
+
+        heroTitle.innerText = 'Surprise Standard Benchmark!';
+        heroDesc.innerText = 'Unannounced retention check. No warmups or preview allowed—test your raw muscle memory right now under timed conditions.';
+
+        heroActionBtn.className = 'btn-hero btn-hero-surprise';
+        heroActionBtn.innerText = '⚡ Take Surprise Test Now';
+      } else {
+        dayToggleBtn.innerText = 'Routine Day';
+        dayToggleBtn.style.background = 'rgba(245, 158, 11, 0.15)';
+        dayToggleBtn.style.color = 'var(--amber)';
+        dayToggleBtn.style.borderColor = 'var(--amber)';
+
+        heroCard.className = 'hero-card hero-routine';
+        heroPill.className = 'hero-pill pill-routine';
+        heroPill.innerText = '● Routine Conditioning';
+
+        heroTitle.innerText = "Today's 5-Minute Daily Sprint";
+        heroDesc.innerText = 'High-velocity rapid retrieval. Answer in under 4 seconds to engrain muscle memory into your subconscious.';
+
+        heroActionBtn.className = 'btn-hero btn-hero-routine';
+        heroActionBtn.innerText = "▶ Start Today's Practice (5 Mins)";
+      }
+    }
+
+    function toggleSimulatedDay() {
+      isSurpriseDay = !isSurpriseDay;
+      updateHeroDisplay();
+    }
+
+    function startPrimaryAction() {
+      if (isSurpriseDay) {
+        startDrill('surprise');
+      } else {
+        startDrill('routine');
+      }
+    }
+
+    /* AUDIO PRONUNCIATION VIA WEB SPEECH */
+    function playAudio(kanaChar) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(kanaChar);
+        utter.lang = 'ja-JP';
+        utter.rate = 0.85;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function playCurrentKanaAudio() {
+      const q = activeDrillQuestions[currentQIndex];
+      if (q) playAudio(q.char);
+    }
+
+    /* STEALTH TIMER CONTROLS */
+    function toggleTimerVisibility() {
+      isTimerVisible = !isTimerVisible;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const pill = document.getElementById('timerPill');
+      const text = document.getElementById('timerText');
+      const eye = document.getElementById('timerEyeIcon');
+
+      if (!isTimerVisible) {
+        text.innerText = 'Timer: Hidden';
+        eye.innerText = '👁️';
+        pill.classList.remove('urgent');
+      } else {
+        const m = Math.floor(timerRemaining / 60);
+        const s = timerRemaining % 60;
+        text.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+        eye.innerText = '🔒';
+        if (timerRemaining <= 45) {
+          pill.classList.add('urgent');
+        } else {
+          pill.classList.remove('urgent');
+        }
+      }
+    }
+
+    /* QUESTION GENERATION */
+    function generateQuestionSet(mode) {
+      let pool = [];
+      let count = 35;
+      let duration = 300; // 5 mins default
+
+      if (mode === 'hiragana') {
+        pool = [...HIRAGANA_DATA];
+      } else if (mode === 'katakana') {
+        pool = [...KATAKANA_DATA];
+      } else if (mode === 'traps') {
+        const trapGlyphs = ['シ', 'ツ', 'ソ', 'ン', 'さ', 'ち', 'ぬ', 'め', 'る', 'ろ', 'ね', 'れ', 'わ', 'ア', 'マ', 'コ', 'ユ'];
+        pool = [...HIRAGANA_DATA, ...KATAKANA_DATA].filter(k => trapGlyphs.includes(k.char));
+        count = 20;
+        duration = 180;
+      } else if (mode === 'surprise') {
+        // Surprise benchmark: mixed, tighter 3-minute constraint
+        pool = [...HIRAGANA_DATA, ...KATAKANA_DATA];
+        count = 25;
+        duration = 180;
+      } else {
+        // Routine mixed
+        pool = [...HIRAGANA_DATA, ...KATAKANA_DATA];
+        count = 35;
+        duration = 300;
+      }
+
+      // Shuffle pool
+      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      const chosen = shuffled.slice(0, Math.min(count, shuffled.length));
+
+      // Build 4 option distractors for each question
+      return {
+        duration,
+        questions: chosen.map(item => {
+          const isHira = HIRAGANA_DATA.some(h => h.char === item.char);
+          const sisterPool = isHira ? HIRAGANA_DATA : KATAKANA_DATA;
+
+          const distractors = sisterPool
+            .filter(d => d.romaji !== item.romaji)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3)
+            .map(d => d.romaji);
+
+          const options = [item.romaji, ...distractors].sort(() => 0.5 - Math.random());
+          return {
+            ...item,
+            options,
+            isHiragana: isHira
+          };
+        })
+      };
+    }
+
+    /* DRILL ENGINE */
+    function startDrill(mode) {
+      const generated = generateQuestionSet(mode);
+      activeDrillQuestions = generated.questions;
+      currentQIndex = 0;
+      currentScoreCount = 0;
+      currentStreakCount = 0;
+      missedKanaList = [];
+      isAnswerLocked = false;
+      isCurrentSurpriseDrill = (mode === 'surprise');
+
+      timerDuration = generated.duration;
+      timerRemaining = generated.duration;
+      isTimerVisible = false; // Kept hidden by default for zero anxiety
+
+      clearInterval(timerIntervalId);
+      timerIntervalId = setInterval(() => {
+        timerRemaining--;
+        updateTimerDisplay();
+        if (timerRemaining <= 0) {
+          clearInterval(timerIntervalId);
+          finishDrill();
+        }
+      }, 1000);
+
+      updateTimerDisplay();
+      renderQuestion();
+      navigateTo('drill');
+    }
+
+    function renderQuestion() {
+      isAnswerLocked = false;
+      const q = activeDrillQuestions[currentQIndex];
+      if (!q) {
+        finishDrill();
+        return;
+      }
+
+      document.getElementById('currentKanaIndex').innerText = currentQIndex + 1;
+      document.getElementById('totalKanaCount').innerText = activeDrillQuestions.length;
+      document.getElementById('currentScore').innerText = currentScoreCount;
+
+      // Update progress bar
+      const progressPercent = ((currentQIndex) / activeDrillQuestions.length) * 100;
+      document.getElementById('drillProgressFill').style.width = progressPercent + '%';
+
+      // Card details
+      document.getElementById('displayKanaGlyph').innerText = q.char;
+      document.getElementById('displayKanaScript').innerText = q.isHiragana ? 'HIRAGANA' : 'KATAKANA';
+
+      // Streak badge
+      const streakEl = document.getElementById('streakBadge');
+      if (currentStreakCount >= 3) {
+        streakEl.style.display = 'inline-block';
+        streakEl.innerText = `🔥 ${currentStreakCount} Streak! Reflex dialed in.`;
+      } else {
+        streakEl.style.display = 'none';
+      }
+
+      // Hide tip box until answered
+      const tipBox = document.getElementById('tipBox');
+      tipBox.style.display = 'none';
+
+      // Options
+      q.options.forEach((optRomaji, i) => {
+        const btn = document.getElementById('opt' + i);
+        btn.innerText = optRomaji;
+        btn.className = 'btn-option';
+      });
+    }
+
+    function selectAnswer(chosenIdx) {
+      if (isAnswerLocked) return;
+      isAnswerLocked = true;
+
+      const q = activeDrillQuestions[currentQIndex];
+      const chosenRomaji = q.options[chosenIdx];
+      const isCorrect = (chosenRomaji === q.romaji);
+
+      const chosenBtn = document.getElementById('opt' + chosenIdx);
+
+      if (isCorrect) {
+        currentScoreCount++;
+        currentStreakCount++;
+        chosenBtn.classList.add('correct');
+        playAudio(q.char);
+      } else {
+        currentStreakCount = 0;
+        chosenBtn.classList.add('wrong');
+        missedKanaList.push(q);
+
+        // Highlight correct option
+        q.options.forEach((opt, idx) => {
+          if (opt === q.romaji) {
+            document.getElementById('opt' + idx).classList.add('correct');
+          }
+        });
+      }
+
+      // Disable other buttons
+      for (let i = 0; i < 4; i++) {
+        if (i !== chosenIdx && q.options[i] !== q.romaji) {
+          document.getElementById('opt' + i).classList.add('disabled');
+        }
+      }
+
+      // Show Sensei Hook
+      const tipBox = document.getElementById('tipBox');
+      const tipText = document.getElementById('tipText');
+      tipText.innerHTML = `<strong>${isCorrect ? 'Correct!' : 'Correction:'}</strong> ${q.char} = [${q.romaji}]. ${q.tip}`;
+      tipBox.style.display = 'block';
+
+      document.getElementById('currentScore').innerText = currentScoreCount;
+
+      // Auto advance
+      setTimeout(() => {
+        if (currentQIndex + 1 < activeDrillQuestions.length) {
+          currentQIndex++;
+          renderQuestion();
+        } else {
+          finishDrill();
+        }
+      }, 1100);
+    }
+
+    /* FINISH DRILL & REPORT CARD */
+    function finishDrill() {
+      clearInterval(timerIntervalId);
+
+      const total = activeDrillQuestions.length;
+      const pct = total > 0 ? Math.round((currentScoreCount / total) * 100) : 0;
+
+      document.getElementById('reportTitle').innerText = isCurrentSurpriseDrill
+        ? 'Surprise Benchmark Complete'
+        : '5-Minute Sprint Complete';
+
+      document.getElementById('reportScoreVal').innerText = `${currentScoreCount} / ${total}`;
+      document.getElementById('reportAccuracyVal').innerText = `Accuracy: ${pct}%`;
+
+      // Sensei evaluation logic
+      const gradeEl = document.getElementById('reportGrade');
+      const adviceEl = document.getElementById('reportAdvice');
+
+      if (pct >= 90) {
+        gradeEl.innerText = 'Grade S (Automatic Reflex)';
+        gradeEl.style.color = '#10b981';
+        adviceEl.innerText = 'Exceptional recognition! Your subconscious neural mapping between visual shape and phonetic sound is automated. Maintain this via your 3-day surprise intervals.';
+      } else if (pct >= 75) {
+        gradeEl.innerText = 'Grade A (Solid Working Recall)';
+        gradeEl.style.color = '#3b82f6';
+        adviceEl.innerText = 'Great recall speed! You are only stumbling on lookalike twins (especially in Katakana). Focus your next practice session on the Trap Breaker.';
+      } else if (pct >= 50) {
+        gradeEl.innerText = 'Grade B (2-Year Plateau Zone)';
+        gradeEl.style.color = '#f59e0b';
+        adviceEl.innerText = 'This is the exact plateau that keeps learners stalled. Stop reading static charts—stick strictly to this 5-minute timed sprint for 7 days straight.';
+      } else {
+        gradeEl.innerText = 'Grade C (Visual Interference)';
+        gradeEl.style.color = '#f43f5e';
+        adviceEl.innerText = 'Conflicting shapes are crossing over in your memory. Do not mix scripts yet: run Hiragana only for 3 days, then switch to Katakana only.';
+      }
+
+      // Render Missed Items
+      const missedSec = document.getElementById('missedSection');
+      const missedContainer = document.getElementById('missedContainer');
+      missedContainer.innerHTML = '';
+
+      if (missedKanaList.length > 0) {
+        missedSec.style.display = 'block';
+        missedKanaList.forEach(m => {
+          const item = document.createElement('div');
+          item.className = 'missed-item';
+          item.innerHTML = `
+            <div>
+              <span class="missed-char">${m.char}</span>
+              <span class="missed-romaji">${m.romaji}</span>
+            </div>
+            <button class="btn-nav" style="padding: 3px 8px; font-size: 11px;" onclick="playAudio('${m.char}')">🔊</button>
+          `;
+          missedContainer.appendChild(item);
+        });
+      } else {
+        missedSec.style.display = 'none';
+      }
+
+      // If surprise test was completed, reset back to routine
+      if (isCurrentSurpriseDrill) {
+        isSurpriseDay = false;
+        updateHeroDisplay();
+      }
+
+      navigateTo('report');
+    }
+
+    // Initialize display state
+    updateHeroDisplay();
+  </script>
+</body>
+</html>
