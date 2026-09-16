@@ -7,4 +7,6 @@ track credit miles gained from spendings
 
 Progress persists locally in the browser (localStorage): every completed drill is logged to a **Test History** page (linked from the dashboard), and the dashboard's "Standard Radar" — accuracy, last surprise-test score, characters mastered, most-flagged characters — is computed live from that history rather than shown as fixed demo values.
 
+A **Kana Reference** page (tile on the dashboard) shows the full 五十音 (gojūon) chart for both scripts in traditional table form — tap any character to hear it, and cells are tinted green/red based on your real mastered/flagged status from the same progress data.
+
 Note: "Surprise" mode is still a manual toggle rather than an automatic day-based trigger.

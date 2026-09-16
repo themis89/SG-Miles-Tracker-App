@@ -303,7 +303,7 @@
 
     @media (min-width: 540px) {
       .grid-extra {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
       }
     }
 
@@ -334,6 +334,7 @@
     .tile-glyph.hira { color: #f43f5e; }
     .tile-glyph.kata { color: #f59e0b; }
     .tile-glyph.trap { color: #a855f7; }
+    .tile-glyph.ref { color: #10b981; }
 
     .tile-badge {
       font-size: 10px;
@@ -649,6 +650,82 @@
       font-size: 13px;
     }
 
+    /* KANA REFERENCE CHART */
+    .gojuon-row {
+      display: grid;
+      grid-template-columns: 22px repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .gojuon-row-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    .gojuon-cell {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 2px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .gojuon-cell:active {
+      transform: scale(0.95);
+    }
+
+    .gojuon-cell.empty {
+      background: none;
+      border: none;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .gojuon-cell.mastered {
+      border-color: var(--emerald);
+      background: var(--emerald-light);
+    }
+
+    .gojuon-cell.flagged {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .gojuon-char {
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .gojuon-romaji {
+      font-size: 8.5px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 2px;
+      letter-spacing: 0.3px;
+    }
+
+    .gojuon-n-cell {
+      width: 64px;
+      margin: 4px auto 0;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 3px;
+      vertical-align: 1px;
+    }
+
     /* REPORT CARD VIEW */
     .report-card {
       background: var(--card-bg);
@@ -878,6 +955,14 @@
           <div class="tile-title">Confusable Traps</div>
           <div class="tile-desc">Fast-track drill on lookalike pairs (シ/ツ, ぬ/め, etc).</div>
         </div>
+
+        <div class="drill-tile" onclick="navigateTo('reference')">
+          <div class="tile-glyph ref">
+            表 <span>›</span>
+          </div>
+          <div class="tile-title">Kana Reference</div>
+          <div class="tile-desc">Full 五十音 chart, both scripts. Tap any character to hear it.</div>
+        </div>
       </div>
 
       <!-- PERFORMANCE RADAR -->
@@ -925,6 +1010,29 @@
       <div id="historySummary" style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px;"></div>
 
       <div id="historyList"></div>
+    </div>
+
+    <!-- VIEW 6: KANA REFERENCE CHART -->
+    <div id="view-reference" class="view">
+      <button class="btn-nav" onclick="navigateTo('dashboard')">← Back to Dashboard</button>
+
+      <div class="section-header" style="margin-top: 16px;">
+        <span class="section-title">Kana Reference</span>
+      </div>
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 4px;">
+        The full 五十音 (gojūon) chart for both scripts. Tap any character to hear it.
+        <span id="referenceLegend"></span>
+      </p>
+
+      <div class="section-header" style="margin-top: 18px;">
+        <span class="section-title" style="color: #f43f5e;">Hiragana</span>
+      </div>
+      <div id="gojuonHiragana"></div>
+
+      <div class="section-header" style="margin-top: 22px;">
+        <span class="section-title" style="color: #f59e0b;">Katakana</span>
+      </div>
+      <div id="gojuonKatakana"></div>
     </div>
 
     <!-- VIEW 2: ACTIVE DRILL / TEST -->
@@ -1167,7 +1275,7 @@
   <!-- JAVASCRIPT LOGIC -->
   <script>
     /* VERSION — bump this on every change so a deployed update is visually confirmable */
-    const APP_VERSION = '1.5.0';
+    const APP_VERSION = '1.6.0';
     const APP_UPDATED = '2026-09-15';
     document.getElementById('versionTag').textContent = 'v' + APP_VERSION;
     document.getElementById('versionTag').title = 'Last updated ' + APP_UPDATED;
@@ -1484,6 +1592,78 @@
       });
     }
 
+    /* KANA REFERENCE CHART — gojūon layout, built from the same HIRAGANA_DATA /
+       KATAKANA_DATA arrays the drills use, so it can never drift out of sync. */
+    const GOJUON_ROW_SIZES = [5, 5, 5, 5, 5, 5, 5, 3, 5, 2]; // a,k,s,t,n,h,m,y,r,w rows; ん is separate
+    const GOJUON_ROW_LABELS = ['', 'K', 'S', 'T', 'N', 'H', 'M', 'Y', 'R', 'W'];
+    const VOWEL_COL = { a: 0, i: 1, u: 2, e: 3, o: 4 };
+
+    function buildGojuonRows(data) {
+      const rows = [];
+      let cursor = 0;
+      GOJUON_ROW_SIZES.forEach(size => {
+        const slots = [null, null, null, null, null];
+        for (let i = 0; i < size; i++) {
+          const item = data[cursor++];
+          const col = VOWEL_COL[item.romaji.slice(-1)];
+          slots[col] = item;
+        }
+        rows.push(slots);
+      });
+      const nCell = data[cursor]; // final entry, ん / ン
+      return { rows, nCell };
+    }
+
+    function charCellClass(char) {
+      const s = appData.charStats[char];
+      if (!s) return '';
+      if (s.seen >= 2 && s.lastCorrect && (s.correct / s.seen) >= 0.7) return ' mastered';
+      if (s.seen - s.correct > 0) return ' flagged';
+      return '';
+    }
+
+    function renderGojuonTable(containerId, data) {
+      const container = document.getElementById(containerId);
+      const { rows, nCell } = buildGojuonRows(data);
+      container.innerHTML = '';
+
+      rows.forEach((slots, rowIdx) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'gojuon-row';
+        const label = document.createElement('div');
+        label.className = 'gojuon-row-label';
+        label.textContent = GOJUON_ROW_LABELS[rowIdx];
+        rowEl.appendChild(label);
+
+        slots.forEach(item => {
+          const cell = document.createElement('div');
+          if (!item) {
+            cell.className = 'gojuon-cell empty';
+          } else {
+            cell.className = 'gojuon-cell' + charCellClass(item.char);
+            cell.innerHTML = `<div class="gojuon-char">${item.char}</div><div class="gojuon-romaji">${item.romaji}</div>`;
+            cell.onclick = () => playAudio(item.romaji);
+          }
+          rowEl.appendChild(cell);
+        });
+        container.appendChild(rowEl);
+      });
+
+      const nRow = document.createElement('div');
+      nRow.className = 'gojuon-cell gojuon-n-cell' + charCellClass(nCell.char);
+      nRow.innerHTML = `<div class="gojuon-char">${nCell.char}</div><div class="gojuon-romaji">${nCell.romaji}</div>`;
+      nRow.onclick = () => playAudio(nCell.romaji);
+      container.appendChild(nRow);
+    }
+
+    function renderReferenceChart() {
+      renderGojuonTable('gojuonHiragana', HIRAGANA_DATA);
+      renderGojuonTable('gojuonKatakana', KATAKANA_DATA);
+      document.getElementById('referenceLegend').innerHTML =
+        ' <span class="legend-dot" style="background: var(--emerald);"></span>mastered' +
+        ' &nbsp; <span class="legend-dot" style="background: var(--primary);"></span>needs work';
+    }
+
     /* VIEW NAVIGATION */
     function navigateTo(viewName) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1495,6 +1675,7 @@
 
       if (viewName === 'dashboard') updateStandardRadar();
       if (viewName === 'history') renderHistory();
+      if (viewName === 'reference') renderReferenceChart();
 
       window.scrollTo(0, 0);
     }
