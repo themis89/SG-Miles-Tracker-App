@@ -7,6 +7,6 @@ track credit miles gained from spendings
 
 Progress persists locally in the browser (localStorage): every completed drill is logged to a **Test History** page (linked from the dashboard), and the dashboard's "Standard Radar" — accuracy, last surprise-test score, characters mastered, most-flagged characters — is computed live from that history rather than shown as fixed demo values.
 
-A **Kana Reference** page (tile on the dashboard) shows the full 五十音 (gojūon) chart for both scripts in traditional table form — tap any character to hear it, and cells are tinted green/red based on your real mastered/flagged status from the same progress data.
+A **Kana Reference** page (tile on the dashboard) has a Hiragana and a Katakana tab. Each shows the full 五十音 (gojūon) chart in traditional table form, plus the voiced sounds (dakuten/handakuten: が ざ だ ば ぱ) and the digraphs (拗音: きゃ しゃ ちゃ …); Katakana also has the loanword sounds (ファ ティ ヴ ウィ …). Tap any character to hear it. Basic kana are tinted green/red from your real mastered/flagged status; the extended sets are reference-only and aren't part of the drills.
 
 Note: "Surprise" mode is still a manual toggle rather than an automatic day-based trigger.
